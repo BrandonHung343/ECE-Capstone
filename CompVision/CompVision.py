@@ -1,46 +1,55 @@
 import numpy as np
 import cv2
 
-frame = None
-lb = np.array([0.0, 0.0, 0.0])
-ub = np.array([0.0, 0.0, 0.0])
-delta = 10
 
-def color_calib(x, y):
-    global frame
-    for i in range(3):
-        if frame[y,x,i] + delta > 255:
+class CVData():
+    def __init__(self):
+        self.lb = np.array([0.0, 0.0, 0.0])
+        self.ub = np.array([0.0, 0.0, 0.0])
+        self.delta = 10
+
+    def print_info(self):
+        print("Lower bound:", self.lb)
+        print("Upper bound:", self.ub)
+
+
+def color_calib(event, x, y, flags, params):
+    cal_frame = params[0]
+    dat = params[1]
+    if event == cv2.EVENT_LBUTTONDOWN:
+        for i in range(3):
+            if cal_frame[y,x,i] + delta > 255:
                 ub[i] = 255
-        else:
-            ub[i] = frame[y,x,i] + delta
-        if frame[y,x,i] - delta < 0:
-            lb[i] = 0
-        else:
-            lb[i] = frame[y,x,i] - delta
+            else:
+                ub[i] = cal_frame[y,x,i] + delta
+            if cal_frame[y,x,i] - delta < 0:
+                lb[i] = 0
+            else:
+                lb[i] = cal_frame[y,x,i] - delta
+        dat.lb = lb
+        dat.ub = ub
 
 
-
-
-def calibrate():
+def calibrate(dat):
     cam = 0
-    cv2.namedWindow("Calibrate")
-    cv2.setMouseCallback("Calibrate", color_calib, None);
+    cv2.namedWindow("calibrate")
     cap = cv2.VideoCapture(cam)
     cap.open(cam)
-    ret, frame = cap.read()
+    ret, cal_frame = cap.read()
+    cv2.setMouseCallback("calibrate", color_calib, [cal_frame, dat]);
+    cv2.imshow("calibrate", cal_frame)
 
-    while True:
-        cv2.imshow("Calibrate", frame)
-        key = cv2.waitKey(1) & 0xFF
+    key = cv2.waitKey(0)
 
-        if key == 27: # Esc
-            cv2.destroyAllWindows()
-            cap.release()
-            break
+    cv2.destroyAllWindows()
+    return dat
 
 
 def main():
-    calibrate()
+    dat = CVData()
+    dat.print_info()
+    dat = calibrate(dat)
+    dat.print_info()
 
 if __name__ == '__main__':
     main()
