@@ -1,12 +1,14 @@
 import numpy as np
 import cv2
 
-
 class CVData():
-    def __init__(self):
+    def __init__(self, numPoints):
         self.lb = np.array([0.0, 0.0, 0.0])
         self.ub = np.array([0.0, 0.0, 0.0])
-        self.delta = 10
+        self.delta = 75
+        self.numPoints = 4
+        self.kSize = 11
+        self.sigX = 0.5
 
     def print_info(self):
         print("Lower bound:", self.lb)
@@ -44,12 +46,33 @@ def calibrate(dat):
 
     key = cv2.waitKey(0)
 
+    masked = color_mask(dat, cal_frame)
+    cv2.imshow("calibrate", masked)
+
+    key = cv2.waitKey(0)
+
     cv2.destroyAllWindows()
     return dat
 
 
+def color_mask(dat, frame):
+
+    frame = cv2.GaussianBlur(frame, (dat.kSize, dat.kSize), dat.sigX)
+    mask = cv2.inRange(frame, dat.lb, dat.ub)
+    # grey world white balancing assumption 
+
+    return cv2.bitwise_and(frame, frame, mask=mask)
+
+
+def white_balance(frame):
+    rScale = np.mean(frame[:, :, 1]) / np.mean(frame[:, :, 0])
+    bScale = np.mean(frame[:, :, 1]) / np.mean(frame[:, :, 2])
+    frame = np.dstack((frame[:, :, 0] * rScale, frame[:, :, 1], frame[:, :, 2] * bScale))
+    return frame
+
+
 def main():
-    dat = CVData()
+    dat = CVData(4)
     dat.print_info()
     dat = calibrate(dat)
     dat.print_info()
