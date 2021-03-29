@@ -16,6 +16,9 @@ class CVData():
 def color_calib(event, x, y, flags, params):
     cal_frame = params[0]
     dat = params[1]
+    delta = dat.delta
+    ub = np.zeros(3)
+    lb = np.zeros(3)
     if event == cv2.EVENT_LBUTTONDOWN:
         for i in range(3):
             if cal_frame[y,x,i] + delta > 255:
