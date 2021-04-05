@@ -126,23 +126,16 @@ class PokerGame(PygameGame):
         self.player7Rect = pygame.Rect(self.width*5/6-self.width/20, self.height/3-self.width/20, self.width/10, self.width/10)
         self.player8Rect = pygame.Rect(self.width*2/3-self.width/20, self.height/6-self.width/20, self.width/10, self.width/10)
 
-        self.player1 = Player("Player 1")
-        self.player2 = Player("Player 2")
-        self.player3 = Player("Player 3")
-        self.player4 = Player("Player 4")
-        self.player5 = Player("Player 5")
-        self.player6 = Player("Player 6")
-        self.player7 = Player("Player 7")
-        self.player8 = Player("Player 8")
-        self.temp1Name = ""
-        self.temp2Name = ""
-        self.temp3Name = ""
-        self.temp4Name = ""
-        self.temp5Name = ""
-        self.temp6Name = ""
-        self.temp7Name = ""
-        self.temp8Name = ""
+        self.player1 = Player(1)
+        self.player2 = Player(2)
+        self.player3 = Player(3)
+        self.player4 = Player(4)
+        self.player5 = Player(5)
+        self.player6 = Player(6)
+        self.player7 = Player(7)
+        self.player8 = Player(8)
 
+        # Add/Del Screen
         self.player1InputActive = False
         self.player2InputActive = False
         self.player3InputActive = False
@@ -155,18 +148,10 @@ class PokerGame(PygameGame):
         self.numPlayers = sum([self.player1.isPlaying,self.player2.isPlaying,self.player3.isPlaying,self.player4.isPlaying,
             self.player5.isPlaying,self.player6.isPlaying,self.player7.isPlaying,self.player8.isPlaying])
 
-        '''
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/3, self.height/6), self.width/20) # Player 1
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/6, self.height/3), self.width/20) # Player 2
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/6, self.height*2/3), self.width/20) # Player 3
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/3, self.height*5/6), self.width/20) # Player 4
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*2/3, self.height*5/6), self.width/20) # Player 5
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*5/6, self.height*2/3), self.width/20) # Player 6
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*5/6, self.height/3), self.width/20) # Player 7
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*2/3, self.height/6), self.width/20) # Player 8'''
-
     # Choose which Screen 
     def mousePressed(self, x, y):
+        print(self.player1.name)
+        #print(self.tracker.
         if (self.gameMode == "configScreen"): 
             PokerGame.configScreenMousePressed(self, x, y)
         elif (self.gameMode == "playGame"):       
@@ -260,77 +245,69 @@ class PokerGame(PygameGame):
             self.gameMode = "configScreen"
 
         elif self.player1Rect.collidepoint(x, y):
+            self.player1.name = ""
             if self.player1.isPlaying:
                 self.player1.isPlaying = False
-                self.player1.name = "Player 1"
                 self.player1.stackSize = 0
             else:
                 self.player1InputActive = True
-                self.player1.name = ""
         
         elif self.player2Rect.collidepoint(x, y):
+            self.player2.name = ""
             if self.player2.isPlaying:
                 self.player2.isPlaying = False
-                self.player2.name = "Player 2"
                 self.player2.stackSize = 0
             else:
                 self.player2InputActive = True
-                self.player2.name = ""
         
         elif self.player3Rect.collidepoint(x, y):
+            self.player3.name = ""
             if self.player3.isPlaying:
                 self.player3.isPlaying = False
-                self.player3.name = "Player 3"
                 self.player3.stackSize = 0
             else:
                 self.player3InputActive = True
-                self.player3.name = ""
         
         elif self.player4Rect.collidepoint(x, y):
+            self.player4.name = ""
             if self.player4.isPlaying:
                 self.player4.isPlaying = False
-                self.player4.name = "Player 4"
                 self.player4.stackSize = 0
             else:
                 self.player4InputActive = True
-                self.player4.name = ""
         
         elif self.player5Rect.collidepoint(x, y):
+            self.player5.name = ""
             if self.player5.isPlaying:
                 self.player5.isPlaying = False
-                self.player5.name = "Player 5"
                 self.player5.stackSize = 0
             else:
                 self.player5InputActive = True
-                self.player5.name = ""
 
         elif self.player6Rect.collidepoint(x, y):
+            self.player6.name = ""
             if self.player6.isPlaying:
                 self.player6.isPlaying = False
-                self.player6.name = "Player 6"
                 self.player6.stackSize = 0
             else:
                 self.player6InputActive = True
-                self.player6.name = ""
 
         elif self.player7Rect.collidepoint(x, y):
+            self.player7.name = ""
             if self.player7.isPlaying:
                 self.player7.isPlaying = False
-                self.player7.name = "Player 7"
                 self.player7.stackSize = 0
             else:
                 self.player7InputActive = True
-                self.player7.name = ""
 
         elif self.player8Rect.collidepoint(x, y):
+            self.player8.name = ""
             if self.player8.isPlaying:
                 self.player8.isPlaying = False
-                self.player8.name = "Player 8"
                 self.player8.stackSize = 0
             else:
                 self.player8InputActive = True
-                self.player8.name = ""
-    
+
     def addDelKeyPressed(self, code, mod):
         # Lower Case LEtter
         if  len(pygame.key.name(code)) == 1: 
@@ -652,7 +629,7 @@ class PokerGame(PygameGame):
    
     def chipConfigRedrawAll(self, screen):
         screen.fill((56,79,70))
-        
+
         whiteRect = self.whiteChip.get_rect(center=(self.width/4,self.height/3))
         redRect = self.redChip.get_rect(center=(self.width/2,self.height/3))
         greenRect = self.greenChip.get_rect(center=(self.width*3/4,self.height/3))
@@ -666,10 +643,14 @@ class PokerGame(PygameGame):
         screen.blit(self.blackChip, blackRect)
 
 class Player(object):
-    def __init__(self, name):
-        self.isPlaying = False
+    def __init__(self, num):
+        self.num = num
+        self.name = ""
+        self.isPlaying = False 
+        self.inHand = False
         self.stackSize = 0
-        self.name = name
+        self.isBetting = False
+        self.betSize = 0
 
+# PokerGame().run()
 
-PokerGame().run()
