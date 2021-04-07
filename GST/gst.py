@@ -1,23 +1,37 @@
 # Game State Tracker
 import sys
-sys.path.insert(1, './DealerUI/')
-from dealerUI import *
+print(sys.path)
+sys.path.insert(1, './DealerUI')
+sys.path.insert(1, './PlayerUI')
+import dealerUI, playerUI
 
 class PokerStateTracker(object):
     def __init__(self):
-        self.numPlayers = 0 # Number of Players at Table
-        self.currDealer = 0 # Where the Dealer Chip is
-        self.gameMode = "configuration" # Game Mode (confiugartion, playGame, etc.)
+        self.playerList = [Player(1), Player(2), Player(3), Player(4), Player(5), Player(6), Player(7), Player(8)]
+        self.potSize = 0
+        self.gameMode = "config"
+        self.dealerGame = dealerUI.PokerGame()
 
-        self.player1 = Player(1)
-        self.player2 = Player(2)
-        self.player3 = Player(3)
-        self.player4 = Player(4)
-        self.player5 = Player(5)
-        self.player6 = Player(6)
-        self.player7 = Player(7)
-        self.player8 = Player(8)
+    def run(self):
+        # Intialize Poker Game and Player List
+        self.dealerGame.run(self.playerList, self.potSize, self.gameMode)
+  
+        # Main Loop
+        playing = True
+        inGame = (self.dealerGame.gameMode == "playGame")
+    
 
-dealerUI.PokerGame().run()
+class Player(object):
+    def __init__(self, num):
+        self.num = num
+        self.name = ""
+        self.isPlaying = False 
+        self.inHand = False
+        self.stackSize = 0
+        self.isBetting = False
+        self.betSize = 0
+
+PokerStateTracker().run()
+
 
 
