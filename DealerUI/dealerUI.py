@@ -42,7 +42,7 @@ class PygameGame(object):
         self.title = title
         self.bgColor = (255, 255, 255)
 
-    def run(self, playerList, potSize, gameMode):
+    def run(self, playerList, potSize, gameMode, chipValues):
         # General Intialization
         clock = pygame.time.Clock()
         screen = pygame.display.set_mode((self.width, self.height), pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
@@ -51,7 +51,7 @@ class PygameGame(object):
         self._keys = dict()
 
         # Poker Game Intialization
-        self.init(playerList, potSize, gameMode)
+        self.init(playerList, potSize, gameMode, chipValues)
         playing = True
         while playing:
             time = clock.tick(self.fps)
@@ -83,7 +83,7 @@ class PygameGame(object):
 
 # Poker Game Class
 class PokerGame(PygameGame):
-    def init(self, playerList, potSize, gameMode):
+    def init(self, playerList, potSize, gameMode, chipValues):
         # General
         self.gameMode = gameMode
         self.myFont = pygame.font.SysFont("Impact", 35)
@@ -99,11 +99,7 @@ class PokerGame(PygameGame):
         self.backRect = pygame.Rect(self.width/20, self.height/20, self.width/15, self.width/15)
 
         # Chip Values
-        self.whiteValue = 1
-        self.redValue = 2
-        self.greenValue = 5
-        self.blueValue = 10
-        self.blackValue = 20
+        self.chipValues = chipValues
 
         self.whiteChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "whitechip.jpg")),(self.width//10, self.width//10))
         self.redChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "redchip.jpg")),(self.width//10, self.width//10))
@@ -137,6 +133,25 @@ class PokerGame(PygameGame):
         self.player6InputActive = False
         self.player7InputActive = False
         self.player8InputActive = False
+
+        # Chip Color Screen
+        self.whiteRect = self.whiteChip.get_rect(center=(self.width/4,self.height/3))
+        self.redRect = self.redChip.get_rect(center=(self.width/2,self.height/3))
+        self.greenRect = self.greenChip.get_rect(center=(self.width*3/4,self.height/3))
+        self.blueRect = self.blueChip.get_rect(center=(self.width/3,self.height*2/3))
+        self.blackRect = self.blackChip.get_rect(center=(self.width*2/3,self.height*2/3))
+
+        self.whiteInputActive = False
+        self.redInputActive = False
+        self.greenInputActive = False
+        self.blueInputActive = False
+        self.blackInputActive = False
+
+        self.tempWhiteNum = ""
+        self.tempRedNum = ""
+        self.tempGreenNum = ""
+        self.tempBlueNum = ""
+        self.tempBlackNum = ""
 
     # Choose which Screen 
     def mousePressed(self, x, y):
@@ -605,28 +620,136 @@ class PokerGame(PygameGame):
 
     # Chip Colors Config
     def chipConfigMousePressed(self, x, y):
-        pass
+        self.whiteInputActive = False
+        self.redInputActive = False
+        self.greenInputActive = False
+        self.blueInputActive = False
+        self.blackInputActive = False
+
+        if self.backRect.collidepoint(x, y):
+            self.gameMode = "config"
+
+        elif self.whiteRect.collidepoint(x, y):
+            self.tempWhiteNum = ""
+            self.whiteInputActive = True
+
+        elif self.redRect.collidepoint(x, y):
+            self.tempRedNum = ""
+            self.redInputActive = True
+
+        elif self.greenRect.collidepoint(x, y):
+            self.tempGreenNum = ""
+            self.greenInputActive = True
+        
+        elif self.blueRect.collidepoint(x, y):
+            self.tempBlueNum = ""
+            self.blueInputActive = True
+        
+        elif self.blackRect.collidepoint(x, y):
+            self.tempBlackNum = ""
+            self.blackInputActive = True
+
     
     def chipConfigKeyPressed(self, code, mod):
-        pass
-  
+        # Numbers
+        if  len(pygame.key.name(code)) == 1: 
+            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
+                number = pygame.key.name(code)
+                if self.whiteInputActive:
+                    self.tempWhiteNum += number
+                if self.redInputActive:
+                    self.tempRedNum += number
+                if self.greenInputActive:
+                    self.tempGreenNum += number
+                if self.blueInputActive:
+                    self.tempBlueNum += number
+                if self.blackInputActive:
+                    self.tempBlackNum += number
+                
+
+        # Enter/Return
+        elif code == pygame.K_RETURN:
+            if self.whiteInputActive:
+                self.whiteInputActive = False
+                self.chipValues[0] = int(self.tempWhiteNum)
+                self.tempWhiteNum = ""
+
+            elif self.redInputActive:
+                self.redInputActive = False
+                self.chipValues[1] = int(self.tempRedNum)
+                self.tempRedNum = ""
+
+            elif self.greenInputActive:
+                self.greenInputActive = False
+                self.chipValues[2] = int(self.tempGreenNum)
+                self.tempGreenNum = ""
+
+            elif self.blueInputActive:
+                self.blueInputActive = False
+                self.chipValues[3] = int(self.tempBlueNum)
+                self.tempBlueNum = ""
+
+            elif self.blackInputActive:
+                self.blackInputActive = False
+                self.chipValues[4] = int(self.tempBlackNum)
+                self.tempBlackNum = ""
+
+           
     def chipConfigTimerFired(self,dt):
         pass   
    
     def chipConfigRedrawAll(self, screen):
         screen.fill((56,79,70))
 
-        whiteRect = self.whiteChip.get_rect(center=(self.width/4,self.height/3))
-        redRect = self.redChip.get_rect(center=(self.width/2,self.height/3))
-        greenRect = self.greenChip.get_rect(center=(self.width*3/4,self.height/3))
-        blueRect = self.blueChip.get_rect(center=(self.width/3,self.height*2/3))
-        blackRect = self.blackChip.get_rect(center=(self.width*2/3,self.height*2/3))
+        clickWords = self.myFont.render("Click to Edit", True, (0,0,0))
+        clickBox = clickWords.get_rect(center = (self.width/2, self.height/8))
+        screen.blit(clickWords, clickBox)
 
-        screen.blit(self.whiteChip, whiteRect)
-        screen.blit(self.redChip, redRect)
-        screen.blit(self.greenChip, greenRect)
-        screen.blit(self.blueChip, blueRect)
-        screen.blit(self.blackChip, blackRect)
+        whiteNum = self.myFont.render(str(self.chipValues[0]), True, (0,0,0))
+        redNum = self.myFont.render(str(self.chipValues[1]), True, (0,0,0))
+        greenNum = self.myFont.render(str(self.chipValues[2]), True, (0,0,0))
+        blueNum = self.myFont.render(str(self.chipValues[3]), True, (0,0,0))
+        blackNum = self.myFont.render(str(self.chipValues[4]), True, (0,0,0))
 
-# PokerGame().run()
+        tempWhite = self.myFont.render(self.tempWhiteNum, True, (0,0,0))
+        tempRed = self.myFont.render(self.tempRedNum, True, (0,0,0))
+        tempGreen = self.myFont.render(self.tempGreenNum, True, (0,0,0))
+        tempBlue = self.myFont.render(self.tempBlueNum, True, (0,0,0))
+        tempBlack = self.myFont.render(self.tempBlackNum, True, (0,0,0))
 
+        whiteBox = whiteNum.get_rect(center = self.whiteRect.center)
+        redBox = redNum.get_rect(center = self.redRect.center)
+        greenBox = greenNum.get_rect(center = self.greenRect.center)
+        blueBox = blueNum.get_rect(center = self.blueRect.center)
+        blackBox = blackNum.get_rect(center = self.blackRect.center)
+
+        screen.blit(self.whiteChip, self.whiteRect)
+        screen.blit(self.redChip, self.redRect)
+        screen.blit(self.greenChip, self.greenRect)
+        screen.blit(self.blueChip, self.blueRect)
+        screen.blit(self.blackChip, self.blackRect)
+
+        if self.whiteInputActive:
+            screen.blit(tempWhite, whiteBox)
+        else:
+            screen.blit(whiteNum, whiteBox)
+
+        if self.redInputActive:
+            screen.blit(tempRed, redBox)
+        else:
+            screen.blit(redNum, redBox)
+
+        if self.greenInputActive:
+            screen.blit(tempGreen, greenBox)
+        else:
+            screen.blit(greenNum, greenBox)
+
+        if self.blueInputActive:
+            screen.blit(tempBlue, blueBox)
+        else:
+            screen.blit(blueNum, blueBox)
+
+        if self.blackInputActive:
+            screen.blit(tempBlack, blackBox)
+        else:
+            screen.blit(blackNum, blackBox)
