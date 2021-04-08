@@ -2,6 +2,7 @@
 class Player(object):
     def __init__(self, num):
         self.num = num
+        #self.deg = deg
         self.name = ""
         self.isPlaying = False 
         self.inHand = False
