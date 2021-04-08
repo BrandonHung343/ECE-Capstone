@@ -4,7 +4,6 @@ import pygame
 import random
 import math
 import os
-import config
 sys.path.insert(1, './GST')
 import config
 import serial
@@ -90,20 +89,20 @@ class PygameGame(object):
 class PokerGame(PygameGame):
     def init(self):
         # General
-        self.myFont = pygame.font.SysFont("Impact", 35)
+        self.myFont = pygame.font.SysFont("Impact", self.width//20)
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
         self.ser = serial.Serial('/dev/ttyACM0',9600)
 
         # Config Screen 
-        self.startButton = pygame.Rect(self.width/2-self.width/5, self.height/2-self.width/5, self.width/5, self.width/5)
-        self.addDelButton = pygame.Rect(self.width/2, self.height/2-self.width/5, self.width/5, self.width/5)
-        self.chipColorButton = pygame.Rect(self.width/2-self.width/5, self.height/2, self.width/5, self.width/5)
-        self.stackSizeButton = pygame.Rect(self.width/2, self.height/2, self.width/5, self.width/5)
+        self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
+        self.addDelButton = pygame.Rect(self.width//2, self.height//2-self.width//5, self.width//5, self.width//5)
+        self.chipColorButton = pygame.Rect(self.width//2-self.width//5, self.height//2, self.width//5, self.width//5)
+        self.stackSizeButton = pygame.Rect(self.width//2, self.height//2, self.width//5, self.width//5)
 
         # Back Button 
-        self.backRect = pygame.Rect(self.width/20, self.height/20, self.width/15, self.width/15)
+        self.backRect = pygame.Rect(self.width//20, self.height//20, self.width//15, self.width//15)
 
         # Chip Values
         self.whiteChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "whitechip.jpg")),(self.width//10, self.width//10))
@@ -114,19 +113,19 @@ class PokerGame(PygameGame):
 
         # Play Game
         self.dealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//10, self.width//10))
-        self.pokerTable = pygame.Rect(self.width/10, self.height/10, self.width-self.width/5, self.height-self.height/5) 
-        self.rotateButton = pygame.Rect(self.width-self.width/10, self.height/20, self.width/15, self.width/15)
+        self.pokerTable = pygame.Rect(self.width//10, self.height//10, self.width-self.width//5, self.height-self.height//5) 
+        self.rotateButton = pygame.Rect(self.width-self.width//10, self.height//20, self.width//15, self.width//15)
 
         # Players
 
-        self.player8Rect = pygame.Rect(self.width/3-self.width/20, self.height/6-self.width/20, self.width/10, self.width/10)
-        self.player7Rect = pygame.Rect(self.width/6-self.width/20, self.height/3-self.width/20, self.width/10, self.width/10)
-        self.player6Rect = pygame.Rect(self.width/6-self.width/20, self.height*2/3-self.width/20, self.width/10, self.width/10)
-        self.player5Rect = pygame.Rect(self.width/3-self.width/20, self.height*5/6-self.width/20, self.width/10, self.width/10)
-        self.player4Rect = pygame.Rect(self.width*2/3-self.width/20, self.height*5/6-self.width/20, self.width/10, self.width/10)
-        self.player3Rect = pygame.Rect(self.width*5/6-self.width/20, self.height*2/3-self.width/20, self.width/10, self.width/10)
-        self.player2Rect = pygame.Rect(self.width*5/6-self.width/20, self.height/3-self.width/20, self.width/10, self.width/10)
-        self.player1Rect = pygame.Rect(self.width*2/3-self.width/20, self.height/6-self.width/20, self.width/10, self.width/10)
+        self.player8Rect = pygame.Rect(self.width//3-self.width//20, self.height//6-self.width//20, self.width//10, self.width//10)
+        self.player7Rect = pygame.Rect(self.width//6-self.width//20, self.height//3-self.width//20, self.width//10, self.width//10)
+        self.player6Rect = pygame.Rect(self.width//6-self.width//20, self.height*2//3-self.width//20, self.width//10, self.width//10)
+        self.player5Rect = pygame.Rect(self.width//3-self.width//20, self.height*5//6-self.width//20, self.width//10, self.width//10)
+        self.player4Rect = pygame.Rect(self.width*2//3-self.width//20, self.height*5//6-self.width//20, self.width//10, self.width//10)
+        self.player3Rect = pygame.Rect(self.width*5//6-self.width//20, self.height*2//3-self.width//20, self.width//10, self.width//10)
+        self.player2Rect = pygame.Rect(self.width*5//6-self.width//20, self.height//3-self.width//20, self.width//10, self.width//10)
+        self.player1Rect = pygame.Rect(self.width*2//3-self.width//20, self.height//6-self.width//20, self.width//10, self.width//10)
 
         # Add/Del Screen
         self.player1InputActive = False
@@ -139,11 +138,11 @@ class PokerGame(PygameGame):
         self.player8InputActive = False
 
         # Chip Color Screen
-        self.whiteRect = self.whiteChip.get_rect(center=(self.width/4,self.height/3))
-        self.redRect = self.redChip.get_rect(center=(self.width/2,self.height/3))
-        self.greenRect = self.greenChip.get_rect(center=(self.width*3/4,self.height/3))
-        self.blueRect = self.blueChip.get_rect(center=(self.width/3,self.height*2/3))
-        self.blackRect = self.blackChip.get_rect(center=(self.width*2/3,self.height*2/3))
+        self.whiteRect = self.whiteChip.get_rect(center=(self.width//4,self.height//3))
+        self.redRect = self.redChip.get_rect(center=(self.width//2,self.height//3))
+        self.greenRect = self.greenChip.get_rect(center=(self.width*3//4,self.height//3))
+        self.blueRect = self.blueChip.get_rect(center=(self.width//3,self.height*2//3))
+        self.blackRect = self.blackChip.get_rect(center=(self.width*2//3,self.height*2//3))
 
         self.whiteInputActive = False
         self.redInputActive = False
@@ -398,49 +397,49 @@ class PokerGame(PygameGame):
         pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
 
         # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width/2,self.height/10))
+        dealerRect = self.dealerChip.get_rect(center=(self.width//2,self.height//10))
         screen.blit(self.dealerChip, dealerRect)
 
         # Players 
         if self.player1InputActive: 
-            pygame.draw.circle(screen, (100, 150, 100), self.player1Rect.center,self.width/20)
+            pygame.draw.circle(screen, (100, 150, 100), self.player1Rect.center,self.width//20)
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
 
         if self.player2InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
 
         if self.player3InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
 
         if self.player4InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player4Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player4Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
         
         if self.player5InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
         
         if self.player6InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player6Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player6Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
         
         if self.player7InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player7Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player7Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
 
         if self.player8InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player8Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player8Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
         
 
         removePlayer1 = self.myFont.render("Remove "+config.playerList[0].name, True, (0,0,0))
@@ -586,15 +585,15 @@ class PokerGame(PygameGame):
 
         # Pot
         thePot = self.myFont.render("The Pot", True, (0,0,0))
-        thePotBox = thePot.get_rect(center = (self.width/2, self.height/2-self.height/25))
+        thePotBox = thePot.get_rect(center = (self.width//2, self.height//2-self.height//25))
         screen.blit(thePot, thePotBox)
         potSizeString = "$%d" % config.potSize
         potSize = self.myFont.render(potSizeString, True, (0,0,0))
-        potSizeBox = potSize.get_rect(center = (self.width/2, self.height/2+self.height/25))
+        potSizeBox = potSize.get_rect(center = (self.width//2, self.height//2+self.height//25))
         screen.blit(potSize, potSizeBox)
         
         # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width/2,self.height/10))
+        dealerRect = self.dealerChip.get_rect(center=(self.width//2,self.height//10))
         screen.blit(self.dealerChip, dealerRect)
 
         # Players
@@ -616,61 +615,61 @@ class PokerGame(PygameGame):
         player7Stack = self.myFont.render("$"+str(config.playerList[6].stackSize), True, (0,0,0))
         player8Stack = self.myFont.render("$"+str(config.playerList[7].stackSize), True, (0,0,0))
 
-        player1NameBox = player1Name.get_rect(center = (self.player1Rect.x+self.player1Rect.w/2, self.player1Rect.y+self.player1Rect.h/4))
-        player2NameBox = player2Name.get_rect(center = (self.player2Rect.x+self.player2Rect.w/2, self.player2Rect.y+self.player2Rect.h/4))
-        player3NameBox = player3Name.get_rect(center = (self.player3Rect.x+self.player3Rect.w/2, self.player3Rect.y+self.player3Rect.h/4))
-        player4NameBox = player4Name.get_rect(center = (self.player4Rect.x+self.player4Rect.w/2, self.player4Rect.y+self.player4Rect.h/4))
-        player5NameBox = player5Name.get_rect(center = (self.player5Rect.x+self.player5Rect.w/2, self.player5Rect.y+self.player5Rect.h/4))
-        player6NameBox = player6Name.get_rect(center = (self.player6Rect.x+self.player6Rect.w/2, self.player6Rect.y+self.player6Rect.h/4))
-        player7NameBox = player7Name.get_rect(center = (self.player7Rect.x+self.player7Rect.w/2, self.player7Rect.y+self.player7Rect.h/4))
-        player8NameBox = player8Name.get_rect(center = (self.player8Rect.x+self.player8Rect.w/2, self.player8Rect.y+self.player8Rect.h/4))
+        player1NameBox = player1Name.get_rect(center = (self.player1Rect.x+self.player1Rect.w//2, self.player1Rect.y+self.player1Rect.h//4))
+        player2NameBox = player2Name.get_rect(center = (self.player2Rect.x+self.player2Rect.w//2, self.player2Rect.y+self.player2Rect.h//4))
+        player3NameBox = player3Name.get_rect(center = (self.player3Rect.x+self.player3Rect.w//2, self.player3Rect.y+self.player3Rect.h//4))
+        player4NameBox = player4Name.get_rect(center = (self.player4Rect.x+self.player4Rect.w//2, self.player4Rect.y+self.player4Rect.h//4))
+        player5NameBox = player5Name.get_rect(center = (self.player5Rect.x+self.player5Rect.w//2, self.player5Rect.y+self.player5Rect.h//4))
+        player6NameBox = player6Name.get_rect(center = (self.player6Rect.x+self.player6Rect.w//2, self.player6Rect.y+self.player6Rect.h//4))
+        player7NameBox = player7Name.get_rect(center = (self.player7Rect.x+self.player7Rect.w//2, self.player7Rect.y+self.player7Rect.h//4))
+        player8NameBox = player8Name.get_rect(center = (self.player8Rect.x+self.player8Rect.w//2, self.player8Rect.y+self.player8Rect.h//4))
 
-        stack1Box = player1Stack.get_rect(center = (self.player1Rect.x+self.player1Rect.w/2, self.player1Rect.y+self.player1Rect.h*3/4))
-        stack2Box = player2Stack.get_rect(center = (self.player2Rect.x+self.player2Rect.w/2, self.player2Rect.y+self.player2Rect.h*3/4))
-        stack3Box = player3Stack.get_rect(center = (self.player3Rect.x+self.player3Rect.w/2, self.player3Rect.y+self.player3Rect.h*3/4))
-        stack4Box = player4Stack.get_rect(center = (self.player4Rect.x+self.player4Rect.w/2, self.player4Rect.y+self.player4Rect.h*3/4))
-        stack5Box = player5Stack.get_rect(center = (self.player5Rect.x+self.player5Rect.w/2, self.player5Rect.y+self.player5Rect.h*3/4))
-        stack6Box = player6Stack.get_rect(center = (self.player6Rect.x+self.player6Rect.w/2, self.player6Rect.y+self.player6Rect.h*3/4))
-        stack7Box = player7Stack.get_rect(center = (self.player7Rect.x+self.player7Rect.w/2, self.player7Rect.y+self.player7Rect.h*3/4))
-        stack8Box = player8Stack.get_rect(center = (self.player8Rect.x+self.player8Rect.w/2, self.player8Rect.y+self.player8Rect.h*3/4))
+        stack1Box = player1Stack.get_rect(center = (self.player1Rect.x+self.player1Rect.w//2, self.player1Rect.y+self.player1Rect.h*3//4))
+        stack2Box = player2Stack.get_rect(center = (self.player2Rect.x+self.player2Rect.w//2, self.player2Rect.y+self.player2Rect.h*3//4))
+        stack3Box = player3Stack.get_rect(center = (self.player3Rect.x+self.player3Rect.w//2, self.player3Rect.y+self.player3Rect.h*3//4))
+        stack4Box = player4Stack.get_rect(center = (self.player4Rect.x+self.player4Rect.w//2, self.player4Rect.y+self.player4Rect.h*3//4))
+        stack5Box = player5Stack.get_rect(center = (self.player5Rect.x+self.player5Rect.w//2, self.player5Rect.y+self.player5Rect.h*3//4))
+        stack6Box = player6Stack.get_rect(center = (self.player6Rect.x+self.player6Rect.w//2, self.player6Rect.y+self.player6Rect.h*3//4))
+        stack7Box = player7Stack.get_rect(center = (self.player7Rect.x+self.player7Rect.w//2, self.player7Rect.y+self.player7Rect.h*3//4))
+        stack8Box = player8Stack.get_rect(center = (self.player8Rect.x+self.player8Rect.w//2, self.player8Rect.y+self.player8Rect.h*3//4))
 
         if config.playerList[0].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
             screen.blit(player1Name, player1NameBox)
             screen.blit(player1Stack, stack1Box)
 
         if config.playerList[1].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
             screen.blit(player2Name, player2NameBox)
             screen.blit(player2Stack, stack2Box)
 
         if config.playerList[2].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
             screen.blit(player3Name, player3NameBox)
             screen.blit(player3Stack, stack3Box)
             
         if config.playerList[3].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
             screen.blit(player4Name, player4NameBox)
             screen.blit(player4Stack, stack4Box)
             
         if config.playerList[4].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
             screen.blit(player5Name, player5NameBox)
             screen.blit(player5Stack, stack5Box)
             
         if config.playerList[5].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
             screen.blit(player6Name, player6NameBox)
             screen.blit(player6Stack, stack6Box)
         
         if config.playerList[6].isPlaying:           
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
             screen.blit(player7Name, player7NameBox)
             screen.blit(player7Stack, stack7Box)
         
         if config.playerList[7].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
             screen.blit(player8Name, player8NameBox)
             screen.blit(player8Stack, stack8Box)
 
@@ -758,7 +757,7 @@ class PokerGame(PygameGame):
         screen.fill((56,79,70))
 
         clickWords = self.myFont.render("Click to Edit Chip Values", True, (0,0,0))
-        clickBox = clickWords.get_rect(center = (self.width/2, self.height/8))
+        clickBox = clickWords.get_rect(center = (self.width//2, self.height//8))
         screen.blit(clickWords, clickBox)
 
         whiteNum = self.myFont.render(str(config.chipValues[0]), True, (0,0,0))
@@ -937,7 +936,7 @@ class PokerGame(PygameGame):
 
         # Pot
         editStack = self.myFont.render("Click to Edit Stack Sizes", True, (0,0,0))
-        editBox = editStack.get_rect(center = (self.width/2, self.height/2))
+        editBox = editStack.get_rect(center = (self.width//2, self.height//2))
         screen.blit(editStack, editBox)    
 
         # Players
@@ -960,34 +959,34 @@ class PokerGame(PygameGame):
         player8NameBox = player8Name.get_rect(center = self.player8Rect.center)
 
         if config.playerList[0].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
             screen.blit(player1Name, player1NameBox)
 
         if config.playerList[1].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
             screen.blit(player2Name, player2NameBox)
 
         if config.playerList[2].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
             screen.blit(player3Name, player3NameBox)
             
         if config.playerList[3].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
             screen.blit(player4Name, player4NameBox)
             
         if config.playerList[4].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
             screen.blit(player5Name, player5NameBox)
             
         if config.playerList[5].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
             screen.blit(player6Name, player6NameBox)
         
         if config.playerList[6].isPlaying:           
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
             screen.blit(player7Name, player7NameBox)
         
         if config.playerList[7].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
             screen.blit(player8Name, player8NameBox)
 
