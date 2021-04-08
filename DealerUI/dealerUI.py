@@ -7,6 +7,8 @@ import os
 import config
 sys.path.insert(1, './GST')
 import config
+import serial
+
 
 # Pygame Framework
 class PygameGame(object):
@@ -90,6 +92,9 @@ class PokerGame(PygameGame):
         # General
         self.myFont = pygame.font.SysFont("Impact", 35)
         folder = os.path.dirname(os.path.realpath(__file__))
+
+        # Servo
+        self.ser = serial.Serial('/dev/ttyACM0',9600)
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width/2-self.width/5, self.height/2-self.width/5, self.width/5, self.width/5)
@@ -547,6 +552,9 @@ class PokerGame(PygameGame):
         
         if self.rotateButton.collidepoint(x,y):
             config.currAction = "rotate"
+            string = "rotate\n"
+            string_encode = string.encode()
+            self.ser.write(string_encode)
 
     def playGameKeyPressed(self, code, mod):
         pass

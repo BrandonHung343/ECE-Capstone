@@ -1,7 +1,4 @@
 # Config File
-
-
-# Player Class
 class Player(object):
     def __init__(self, num):
         self.num = num
