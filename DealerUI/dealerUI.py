@@ -546,14 +546,17 @@ class PokerGame(PygameGame):
             config.gameMode = "config"
         
         if self.rotateButton.collidepoint(x,y):
-            print(config.playerList[0].name)
-            config.nextAction = "rotate"
+            config.currAction = "rotate"
 
     def playGameKeyPressed(self, code, mod):
         pass
    
     def playGameTimerFired(self, dt):
-        pass
+        while config.currAction == "rotate":
+            config.rotateTime += dt
+            if config.rotateTime >= 20000: # 20 seconds
+                config.currAction = ""
+                config.rotateTime = 0
   
     def playGameRedrawAll(self, screen):
         screen.fill((120, 120, 120))

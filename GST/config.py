@@ -16,4 +16,5 @@ playerList = [Player(1), Player(2), Player(3), Player(4), Player(5), Player(6), 
 chipValues = [1, 2, 5, 10, 20] # white, red, green, blue, black 
 potSize = 0
 gameMode = "config"
-nextAction = ""
+currAction = ""
+rotateTime = 0
