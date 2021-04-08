@@ -112,7 +112,8 @@ class PokerGame(PygameGame):
         self.blackChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "blackchip.jpg")),(self.width//10, self.width//10))
 
         # Play Game
-        self.dealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//10, self.width//10))
+        self.bigDealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//10, self.width//10))
+        self.dealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//30, self.width//30))
         self.pokerTable = pygame.Rect(self.width//10, self.height//10, self.width-self.width//5, self.height-self.height//5) 
         self.rotateButton = pygame.Rect(self.width-self.width//10, self.height//20, self.width//15, self.width//15)
 
@@ -156,7 +157,7 @@ class PokerGame(PygameGame):
         self.tempBlueNum = ""
         self.tempBlackNum = ""
 
-        # Stack Sizes
+        # Stack Sizes      
 
     # Choose which Screen 
     def mousePressed(self, x, y):      
@@ -397,8 +398,8 @@ class PokerGame(PygameGame):
         pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
 
         # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width//2,self.height//10))
-        screen.blit(self.dealerChip, dealerRect)
+        dealerRect = self.bigDealerChip.get_rect(center=(self.width//2,self.height//10))
+        screen.blit(self.bigDealerChip, dealerRect)
 
         # Players 
         if self.player1InputActive: 
@@ -549,14 +550,20 @@ class PokerGame(PygameGame):
         if self.backRect.collidepoint(x, y):
             config.gameMode = "config"
         
-        if self.rotateButton.collidepoint(x,y):
+        '''if self.rotateButton.collidepoint(x,y):
             config.currAction = "rotate"
             string = "rotate\n"
             string_encode = string.encode()
-            #self.ser.write(string_encode)
+            #self.ser.write(string_encode)'''
 
     def playGameKeyPressed(self, code, mod):
-        pass
+        if  len(pygame.key.name(code)) == 1: 
+            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
+                number = pygame.key.name(code)
+                config.currAction = "rotate"
+                string = "rotate"+"number"+"0"+"\n"
+                string_encode = string.encode()
+                self.ser.write(string_encode)
    
     def playGameTimerFired(self, dt):
         while config.currAction == "rotate":
@@ -593,9 +600,18 @@ class PokerGame(PygameGame):
         screen.blit(potSize, potSizeBox)
         
         # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width//2,self.height//10))
-        screen.blit(self.dealerChip, dealerRect)
+        dealerRect = self.bigDealerChip.get_rect(center=(self.width//2,self.height//10))
+        screen.blit(self.bigDealerChip, dealerRect)
 
+        dealer1Rect = self.dealerChip.get_rect(center = (self.player1Rect.x, self.player1Rect.y+self.player1Rect.h))
+        dealer2Rect = self.dealerChip.get_rect(center = (self.player2Rect.x, self.player2Rect.y+self.player2Rect.h))
+        dealer3Rect = self.dealerChip.get_rect(center = (self.player3Rect.x, self.player3Rect.y+self.player3Rect.h))
+        dealer4Rect = self.dealerChip.get_rect(center = (self.player4Rect.x, self.player4Rect.y+self.player4Rect.h))
+        dealer5Rect = self.dealerChip.get_rect(center = (self.player5Rect.x, self.player5Rect.y+self.player5Rect.h))
+        dealer6Rect = self.dealerChip.get_rect(center = (self.player6Rect.x, self.player6Rect.y+self.player6Rect.h))
+        dealer7Rect = self.dealerChip.get_rect(center = (self.player7Rect.x, self.player7Rect.y+self.player7Rect.h))
+        dealer8Rect = self.dealerChip.get_rect(center = (self.player8Rect.x, self.player8Rect.y+self.player8Rect.h))
+        
         # Players
         player1Name = self.myFont.render(config.playerList[0].name, True, (0,0,0))
         player2Name = self.myFont.render(config.playerList[1].name, True, (0,0,0))
@@ -672,6 +688,17 @@ class PokerGame(PygameGame):
             pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
             screen.blit(player8Name, player8NameBox)
             screen.blit(player8Stack, stack8Box)
+
+        # Player Dealer
+        num = config.playerList[0].num
+        if num == 1: screen.blit(self.dealerChip, dealer1Rect)
+        if num == 2: screen.blit(self.dealerChip, dealer2Rect)
+        if num == 3: screen.blit(self.dealerChip, dealer3Rect)
+        if num == 4: screen.blit(self.dealerChip, dealer4Rect)
+        if num == 5: screen.blit(self.dealerChip, dealer5Rect)
+        if num == 6: screen.blit(self.dealerChip, dealer6Rect)
+        if num == 7: screen.blit(self.dealerChip, dealer7Rect)
+        if num == 8: screen.blit(self.dealerChip, dealer8Rect)
 
     # Chip Colors Config
     def chipConfigMousePressed(self, x, y):
