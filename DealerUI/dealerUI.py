@@ -93,7 +93,9 @@ class PokerGame(PygameGame):
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
+
         self.ser = serial.Serial('/dev/cu.usbmodem144301',9600)
+
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
