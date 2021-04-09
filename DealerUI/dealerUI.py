@@ -93,7 +93,7 @@ class PokerGame(PygameGame):
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
-        #self.ser = serial.Serial('/dev/ttyACM0',9600)
+        self.ser = serial.Serial('/dev/cu.usbmodem144301',9600)
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
@@ -561,7 +561,7 @@ class PokerGame(PygameGame):
             if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
                 number = pygame.key.name(code)
                 config.currAction = "rotate"
-                string = "rotate"+"number"+"0"+"\n"
+                string = "rotate"+number+"0"+"\n"
                 string_encode = string.encode()
                 self.ser.write(string_encode)
    
