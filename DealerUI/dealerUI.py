@@ -1,9 +1,13 @@
 # Dealer UI
-
+import sys
 import pygame
 import random
 import math
 import os
+sys.path.insert(1, './GST')
+import config
+import serial
+
 
 # Pygame Framework
 class PygameGame(object):
@@ -85,26 +89,24 @@ class PygameGame(object):
 class PokerGame(PygameGame):
     def init(self):
         # General
-        self.gameMode = "configScreen"
-        self.myFont = pygame.font.SysFont("Impact", 35)
+        self.myFont = pygame.font.SysFont("Impact", self.width//40)
         folder = os.path.dirname(os.path.realpath(__file__))
 
+        # Servo
+
+        self.ser = serial.Serial('/dev/cu.usbmodem144301',9600)
+
+
         # Config Screen 
-        self.startButton = pygame.Rect(self.width/2-self.width/5, self.height/2-self.width/5, self.width/5, self.width/5)
-        self.addDelButton = pygame.Rect(self.width/2, self.height/2-self.width/5, self.width/5, self.width/5)
-        self.chipColorButton = pygame.Rect(self.width/2-self.width/5, self.height/2, self.width/5, self.width/5)
-        self.stackSizeButton = pygame.Rect(self.width/2, self.height/2, self.width/5, self.width/5)
+        self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
+        self.addDelButton = pygame.Rect(self.width//2, self.height//2-self.width//5, self.width//5, self.width//5)
+        self.chipColorButton = pygame.Rect(self.width//2-self.width//5, self.height//2, self.width//5, self.width//5)
+        self.stackSizeButton = pygame.Rect(self.width//2, self.height//2, self.width//5, self.width//5)
 
         # Back Button 
-        self.backRect = pygame.Rect(self.width/20, self.height/20, self.width/15, self.width/15)
+        self.backRect = pygame.Rect(self.width//20, self.height//20, self.width//15, self.width//15)
 
         # Chip Values
-        self.whiteValue = 1
-        self.redValue = 2
-        self.greenValue = 5
-        self.blueValue = 10
-        self.blackValue = 20
-
         self.whiteChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "whitechip.jpg")),(self.width//10, self.width//10))
         self.redChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "redchip.jpg")),(self.width//10, self.width//10))
         self.greenChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "greenchip.jpg")),(self.width//10, self.width//10))
@@ -112,37 +114,23 @@ class PokerGame(PygameGame):
         self.blackChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "blackchip.jpg")),(self.width//10, self.width//10))
 
         # Play Game
-        self.potSize = 0
-        self.dealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//10, self.width//10))
-        self.pokerTable = pygame.Rect(self.width/10, self.height/10, self.width-self.width/5, self.height-self.height/5) 
+        self.bigDealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//10, self.width//10))
+        self.dealerChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "dealer_chip.jpg")),(self.width//30, self.width//30))
+        self.pokerTable = pygame.Rect(self.width//10, self.height//10, self.width-self.width//5, self.height-self.height//5) 
+        self.rotateButton = pygame.Rect(self.width-self.width//10, self.height//20, self.width//15, self.width//15)
 
-        # Players 
-        self.player1Rect = pygame.Rect(self.width/3-self.width/20, self.height/6-self.width/20, self.width/10, self.width/10)
-        self.player2Rect = pygame.Rect(self.width/6-self.width/20, self.height/3-self.width/20, self.width/10, self.width/10)
-        self.player3Rect = pygame.Rect(self.width/6-self.width/20, self.height*2/3-self.width/20, self.width/10, self.width/10)
-        self.player4Rect = pygame.Rect(self.width/3-self.width/20, self.height*5/6-self.width/20, self.width/10, self.width/10)
-        self.player5Rect = pygame.Rect(self.width*2/3-self.width/20, self.height*5/6-self.width/20, self.width/10, self.width/10)
-        self.player6Rect = pygame.Rect(self.width*5/6-self.width/20, self.height*2/3-self.width/20, self.width/10, self.width/10)
-        self.player7Rect = pygame.Rect(self.width*5/6-self.width/20, self.height/3-self.width/20, self.width/10, self.width/10)
-        self.player8Rect = pygame.Rect(self.width*2/3-self.width/20, self.height/6-self.width/20, self.width/10, self.width/10)
+        # Players
 
-        self.player1 = Player("Player 1")
-        self.player2 = Player("Player 2")
-        self.player3 = Player("Player 3")
-        self.player4 = Player("Player 4")
-        self.player5 = Player("Player 5")
-        self.player6 = Player("Player 6")
-        self.player7 = Player("Player 7")
-        self.player8 = Player("Player 8")
-        self.temp1Name = ""
-        self.temp2Name = ""
-        self.temp3Name = ""
-        self.temp4Name = ""
-        self.temp5Name = ""
-        self.temp6Name = ""
-        self.temp7Name = ""
-        self.temp8Name = ""
+        self.player8Rect = pygame.Rect(self.width//3-self.width//20, self.height//6-self.width//20, self.width//10, self.width//10)
+        self.player7Rect = pygame.Rect(self.width//6-self.width//20, self.height//3-self.width//20, self.width//10, self.width//10)
+        self.player6Rect = pygame.Rect(self.width//6-self.width//20, self.height*2//3-self.width//20, self.width//10, self.width//10)
+        self.player5Rect = pygame.Rect(self.width//3-self.width//20, self.height*5//6-self.width//20, self.width//10, self.width//10)
+        self.player4Rect = pygame.Rect(self.width*2//3-self.width//20, self.height*5//6-self.width//20, self.width//10, self.width//10)
+        self.player3Rect = pygame.Rect(self.width*5//6-self.width//20, self.height*2//3-self.width//20, self.width//10, self.width//10)
+        self.player2Rect = pygame.Rect(self.width*5//6-self.width//20, self.height//3-self.width//20, self.width//10, self.width//10)
+        self.player1Rect = pygame.Rect(self.width*2//3-self.width//20, self.height//6-self.width//20, self.width//10, self.width//10)
 
+        # Add/Del Screen
         self.player1InputActive = False
         self.player2InputActive = False
         self.player3InputActive = False
@@ -152,68 +140,86 @@ class PokerGame(PygameGame):
         self.player7InputActive = False
         self.player8InputActive = False
 
-        self.numPlayers = sum([self.player1.isPlaying,self.player2.isPlaying,self.player3.isPlaying,self.player4.isPlaying,
-            self.player5.isPlaying,self.player6.isPlaying,self.player7.isPlaying,self.player8.isPlaying])
+        # Chip Color Screen
+        self.whiteRect = self.whiteChip.get_rect(center=(self.width//4,self.height//3))
+        self.redRect = self.redChip.get_rect(center=(self.width//2,self.height//3))
+        self.greenRect = self.greenChip.get_rect(center=(self.width*3//4,self.height//3))
+        self.blueRect = self.blueChip.get_rect(center=(self.width//3,self.height*2//3))
+        self.blackRect = self.blackChip.get_rect(center=(self.width*2//3,self.height*2//3))
 
-        '''
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/3, self.height/6), self.width/20) # Player 1
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/6, self.height/3), self.width/20) # Player 2
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/6, self.height*2/3), self.width/20) # Player 3
-        pygame.draw.circle(screen, (75, 75, 75), (self.width/3, self.height*5/6), self.width/20) # Player 4
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*2/3, self.height*5/6), self.width/20) # Player 5
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*5/6, self.height*2/3), self.width/20) # Player 6
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*5/6, self.height/3), self.width/20) # Player 7
-        pygame.draw.circle(screen, (75, 75, 75), (self.width*2/3, self.height/6), self.width/20) # Player 8'''
+        self.whiteInputActive = False
+        self.redInputActive = False
+        self.greenInputActive = False
+        self.blueInputActive = False
+        self.blackInputActive = False
+
+        self.tempWhiteNum = ""
+        self.tempRedNum = ""
+        self.tempGreenNum = ""
+        self.tempBlueNum = ""
+        self.tempBlackNum = ""
+
+        # Stack Sizes      
 
     # Choose which Screen 
-    def mousePressed(self, x, y):
-        if (self.gameMode == "configScreen"): 
+    def mousePressed(self, x, y):      
+        if (config.gameMode == "config"): 
             PokerGame.configScreenMousePressed(self, x, y)
-        elif (self.gameMode == "playGame"):       
+        elif (config.gameMode == "playGame"):       
             PokerGame.playGameMousePressed(self, x, y)
-        elif (self.gameMode == "addDel"):
+        elif (config.gameMode == "addDel"):
             PokerGame.addDelMousePressed(self, x, y)
-        elif (self.gameMode == "chipConfig"):
+        elif (config.gameMode == "chipConfig"):
             PokerGame.chipConfigMousePressed(self, x, y)
+        elif (config.gameMode == "stackSizes"):
+            PokerGame.stackSizesMousePressed(self, x, y)
     
     def keyPressed(self, code, mod):
-        if (self.gameMode == "configScreen"): 
+        if (config.gameMode == "config"): 
             PokerGame.configScreenKeyPressed(self, code, mod)
-        elif (self.gameMode == "playGame"):       
+        elif (config.gameMode == "playGame"):       
             PokerGame.playGameKeyPressed(self, code, mod)
-        elif (self.gameMode == "addDel"):
+        elif (config.gameMode == "addDel"):
             PokerGame.addDelKeyPressed(self, code, mod)
-        elif (self.gameMode == "chipConfig"):
+        elif (config.gameMode == "chipConfig"):
             PokerGame.chipConfigKeyPressed(self, code, mod)
-    
+        elif (config.gameMode == "stackSizes"):
+            PokerGame.stackSizesKeyPressed(self, code, mod)
+
     def timerFired(self, dt):
-        if (self.gameMode == "configScreen"): 
+        if (config.gameMode == "config"): 
             PokerGame.configScreenTimerFired(self, dt)
-        elif (self.gameMode == "playGame"):
+        elif (config.gameMode == "playGame"):
             PokerGame.playGameTimerFired(self, dt)   
-        elif (self.gameMode == "addDel"):
+        elif (config.gameMode == "addDel"):
             PokerGame.addDelTimerFired(self, dt) 
-        elif (self.gameMode == "chipConfig"):
+        elif (config.gameMode == "chipConfig"):
             PokerGame.chipConfigTimerFired(self, dt)
+        elif (config.gameMode == "stackSizes"):
+            PokerGame.stackSizesTimerFired(self, dt)
     
     def redrawAll(self, screen):
-        if (self.gameMode == "configScreen"):
+        if (config.gameMode == "config"):
             PokerGame.configScreenRedrawAll(self, screen)
-        elif (self.gameMode == "playGame"):       
+        elif (config.gameMode == "playGame"):       
             PokerGame.playGameRedrawAll(self, screen)
-        elif (self.gameMode == "addDel"):
+        elif (config.gameMode == "addDel"):
             PokerGame.addDelRedrawAll(self, screen)
-        elif (self.gameMode == "chipConfig"):
+        elif (config.gameMode == "chipConfig"):
             PokerGame.chipConfigRedrawAll(self, screen)
+        elif (config.gameMode == "stackSizes"):
+            PokerGame.stackSizesRedrawAll(self, screen)
     
     # Configuartion Screen Functions
     def configScreenMousePressed(self, x, y):
         if self.startButton.collidepoint(x, y):
-            self.gameMode = "playGame"
+            config.gameMode = "playGame"
         elif self.addDelButton.collidepoint(x, y):
-            self.gameMode = "addDel"
+            config.gameMode = "addDel"
         elif self.chipColorButton.collidepoint(x, y):
-            self.gameMode = "chipConfig"
+            config.gameMode = "chipConfig"
+        elif self.stackSizeButton.collidepoint(x, y):
+            config.gameMode = "stackSizes"
     
     def configScreenKeyPressed(self, code, mod):
         pass
@@ -222,7 +228,6 @@ class PokerGame(PygameGame):
         pass   
    
     def configScreenRedrawAll(self, screen):
-
         screen.fill((56,79,70))
 
         pygame.draw.rect(screen, (170, 25, 25), self.startButton)
@@ -257,135 +262,127 @@ class PokerGame(PygameGame):
         self.player8InputActive = False
 
         if self.backRect.collidepoint(x, y):
-            self.gameMode = "configScreen"
+            config.gameMode = "config"
 
         elif self.player1Rect.collidepoint(x, y):
-            if self.player1.isPlaying:
-                self.player1.isPlaying = False
-                self.player1.name = "Player 1"
-                self.player1.stackSize = 0
+            config.playerList[0].name = ""
+            if config.playerList[0].isPlaying:
+                config.playerList[0].isPlaying = False
+                config.playerList[0].stackSize = 0
             else:
                 self.player1InputActive = True
-                self.player1.name = ""
         
         elif self.player2Rect.collidepoint(x, y):
-            if self.player2.isPlaying:
-                self.player2.isPlaying = False
-                self.player2.name = "Player 2"
-                self.player2.stackSize = 0
+            config.playerList[1].name = ""
+            if config.playerList[1].isPlaying:
+                config.playerList[1].isPlaying = False
+                config.playerList[1].stackSize = 0
             else:
                 self.player2InputActive = True
-                self.player2.name = ""
         
         elif self.player3Rect.collidepoint(x, y):
-            if self.player3.isPlaying:
-                self.player3.isPlaying = False
-                self.player3.name = "Player 3"
-                self.player3.stackSize = 0
+            config.playerList[2].name = ""
+            if config.playerList[2].isPlaying:
+                config.playerList[2].isPlaying = False
+                config.playerList[2].stackSize = 0
             else:
                 self.player3InputActive = True
-                self.player3.name = ""
         
         elif self.player4Rect.collidepoint(x, y):
-            if self.player4.isPlaying:
-                self.player4.isPlaying = False
-                self.player4.name = "Player 4"
-                self.player4.stackSize = 0
+            config.playerList[3].name = ""
+            if config.playerList[3].isPlaying:
+                config.playerList[3].isPlaying = False
+                config.playerList[3].stackSize = 0
             else:
                 self.player4InputActive = True
-                self.player4.name = ""
         
         elif self.player5Rect.collidepoint(x, y):
-            if self.player5.isPlaying:
-                self.player5.isPlaying = False
-                self.player5.name = "Player 5"
-                self.player5.stackSize = 0
+            config.playerList[4].name = ""
+            if config.playerList[4].isPlaying:
+                config.playerList[4].isPlaying = False
+                config.playerList[4].stackSize = 0
             else:
                 self.player5InputActive = True
-                self.player5.name = ""
 
         elif self.player6Rect.collidepoint(x, y):
-            if self.player6.isPlaying:
-                self.player6.isPlaying = False
-                self.player6.name = "Player 6"
-                self.player6.stackSize = 0
+            config.playerList[5].name = ""
+            if config.playerList[5].isPlaying:
+                config.playerList[5].isPlaying = False
+                config.playerList[5].stackSize = 0
             else:
                 self.player6InputActive = True
-                self.player6.name = ""
 
         elif self.player7Rect.collidepoint(x, y):
-            if self.player7.isPlaying:
-                self.player7.isPlaying = False
-                self.player7.name = "Player 7"
-                self.player7.stackSize = 0
+            config.playerList[6].name = ""
+            if config.playerList[6].isPlaying:
+                config.playerList[6].isPlaying = False
+                config.playerList[6].stackSize = 0
             else:
                 self.player7InputActive = True
-                self.player7.name = ""
 
         elif self.player8Rect.collidepoint(x, y):
-            if self.player8.isPlaying:
-                self.player8.isPlaying = False
-                self.player8.name = "Player 8"
-                self.player8.stackSize = 0
+            config.playerList[7].name = ""
+            if config.playerList[7].isPlaying:
+                config.playerList[7].isPlaying = False
+                config.playerList[7].stackSize = 0
             else:
                 self.player8InputActive = True
-                self.player8.name = ""
-    
+
     def addDelKeyPressed(self, code, mod):
-        # Lower Case LEtter
+        # Lower Case Letter
         if  len(pygame.key.name(code)) == 1: 
             if ord(pygame.key.name(code)) >= 97 and ord(pygame.key.name(code)) <= 122:
                 letter = pygame.key.name(code)
                 if self.player1InputActive:
-                    self.player1.name += letter
+                    config.playerList[0].name += letter
                 if self.player2InputActive:
-                    self.player2.name += letter
+                    config.playerList[1].name += letter
                 if self.player3InputActive:
-                    self.player3.name += letter
+                    config.playerList[2].name += letter
                 if self.player4InputActive:
-                    self.player4.name += letter
+                    config.playerList[3].name += letter
                 if self.player5InputActive:
-                    self.player5.name += letter
+                    config.playerList[4].name += letter
                 if self.player6InputActive:
-                    self.player6.name += letter
+                    config.playerList[5].name += letter
                 if self.player7InputActive:
-                    self.player7.name += letter
+                    config.playerList[6].name += letter
                 if self.player8InputActive:
-                    self.player8.name += letter
+                    config.playerList[7].name += letter
 
         # Enter/Return
         elif code == pygame.K_RETURN:
             if self.player1InputActive:
-                self.player1.isPlaying = True
+                config.playerList[0].isPlaying = True
                 self.player1InputActive = False
 
             elif self.player2InputActive:
-                self.player2.isPlaying = True
+                config.playerList[1].isPlaying = True
                 self.player2InputActive = False
 
             elif self.player3InputActive:
-                self.player3.isPlaying = True
+                config.playerList[2].isPlaying = True
                 self.player3InputActive = False
 
             elif self.player4InputActive:
-                self.player4.isPlaying = True
+                config.playerList[3].isPlaying = True
                 self.player4InputActive = False
 
             elif self.player5InputActive:
-                self.player5.isPlaying = True
+                config.playerList[4].isPlaying = True
                 self.player5InputActive = False
 
             elif self.player6InputActive:
-                self.player6.isPlaying = True
+                config.playerList[5].isPlaying = True
                 self.player6InputActive = False
 
             elif self.player7InputActive:
-                self.player7.isPlaying = True
+                config.playerList[6].isPlaying = True
                 self.player7InputActive = False
 
             elif self.player8InputActive:
-                self.player8.isPlaying = True
-                self.player8.InputActive = False
+                config.playerList[7].isPlaying = True
+                self.player8InputActive = False
   
     def addDelTimerFired(self,dt):
         pass   
@@ -403,59 +400,59 @@ class PokerGame(PygameGame):
         pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
 
         # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width/2,self.height/10))
-        screen.blit(self.dealerChip, dealerRect)
+        dealerRect = self.bigDealerChip.get_rect(center=(self.width//2,self.height//10))
+        screen.blit(self.bigDealerChip, dealerRect)
 
         # Players 
         if self.player1InputActive: 
-            pygame.draw.circle(screen, (100, 150, 100), self.player1Rect.center,self.width/20)
+            pygame.draw.circle(screen, (100, 150, 100), self.player1Rect.center,self.width//20)
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
 
         if self.player2InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
 
         if self.player3InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
 
         if self.player4InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player4Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player4Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
         
         if self.player5InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
         
         if self.player6InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player6Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player6Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
         
         if self.player7InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player7Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player7Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
 
         if self.player8InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player8Rect.center, self.width/20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player8Rect.center, self.width//20) 
         else:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width/20)
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
         
 
-        removePlayer1 = self.myFont.render("Remove "+self.player1.name, True, (0,0,0))
-        removePlayer2 = self.myFont.render("Remove "+self.player2.name, True, (0,0,0))
-        removePlayer3 = self.myFont.render("Remove "+self.player3.name, True, (0,0,0))
-        removePlayer4 = self.myFont.render("Remove "+self.player4.name, True, (0,0,0))
-        removePlayer5 = self.myFont.render("Remove "+self.player5.name, True, (0,0,0))
-        removePlayer6 = self.myFont.render("Remove "+self.player6.name, True, (0,0,0))
-        removePlayer7 = self.myFont.render("Remove "+self.player7.name, True, (0,0,0))
-        reomvePlayer8 = self.myFont.render("Remove "+self.player8.name, True, (0,0,0))
+        removePlayer1 = self.myFont.render("Remove "+config.playerList[0].name, True, (0,0,0))
+        removePlayer2 = self.myFont.render("Remove "+config.playerList[1].name, True, (0,0,0))
+        removePlayer3 = self.myFont.render("Remove "+config.playerList[2].name, True, (0,0,0))
+        removePlayer4 = self.myFont.render("Remove "+config.playerList[3].name, True, (0,0,0))
+        removePlayer5 = self.myFont.render("Remove "+config.playerList[4].name, True, (0,0,0))
+        removePlayer6 = self.myFont.render("Remove "+config.playerList[5].name, True, (0,0,0))
+        removePlayer7 = self.myFont.render("Remove "+config.playerList[6].name, True, (0,0,0))
+        removePlayer8 = self.myFont.render("Remove "+config.playerList[7].name, True, (0,0,0))
 
         removePlayer1Box = removePlayer1.get_rect(center = self.player1Rect.center)
         removePlayer2Box = removePlayer2.get_rect(center = self.player2Rect.center)
@@ -464,7 +461,7 @@ class PokerGame(PygameGame):
         removePlayer5Box = removePlayer5.get_rect(center = self.player5Rect.center)
         removePlayer6Box = removePlayer6.get_rect(center = self.player6Rect.center)
         removePlayer7Box = removePlayer7.get_rect(center = self.player7Rect.center)
-        reomvePlayer8Box = reomvePlayer8.get_rect(center = self.player8Rect.center)
+        removePlayer8Box = removePlayer8.get_rect(center = self.player8Rect.center)
 
         addText = self.myFont.render("Add Player", True, (0,0,0))
         player1AddBox = addText.get_rect(center = self.player1Rect.center)
@@ -476,14 +473,14 @@ class PokerGame(PygameGame):
         player7AddBox = addText.get_rect(center = self.player7Rect.center)
         player8AddBox = addText.get_rect(center = self.player8Rect.center)
 
-        inputText1 = self.myFont.render("Input Name : "+self.player1.name, True, (0,0,0))
-        inputText2 = self.myFont.render("Input Name : "+self.player2.name, True, (0,0,0))
-        inputText3 = self.myFont.render("Input Name : "+self.player3.name, True, (0,0,0))
-        inputText4 = self.myFont.render("Input Name : "+self.player4.name, True, (0,0,0))
-        inputText5 = self.myFont.render("Input Name : "+self.player5.name, True, (0,0,0))
-        inputText6 = self.myFont.render("Input Name : "+self.player6.name, True, (0,0,0))
-        inputText7 = self.myFont.render("Input Name : "+self.player7.name, True, (0,0,0))
-        inputText8 = self.myFont.render("Input Name : "+self.player8.name, True, (0,0,0))
+        inputText1 = self.myFont.render("Input Name : "+config.playerList[0].name, True, (0,0,0))
+        inputText2 = self.myFont.render("Input Name : "+config.playerList[1].name, True, (0,0,0))
+        inputText3 = self.myFont.render("Input Name : "+config.playerList[2].name, True, (0,0,0))
+        inputText4 = self.myFont.render("Input Name : "+config.playerList[3].name, True, (0,0,0))
+        inputText5 = self.myFont.render("Input Name : "+config.playerList[4].name, True, (0,0,0))
+        inputText6 = self.myFont.render("Input Name : "+config.playerList[5].name, True, (0,0,0))
+        inputText7 = self.myFont.render("Input Name : "+config.playerList[6].name, True, (0,0,0))
+        inputText8 = self.myFont.render("Input Name : "+config.playerList[7].name, True, (0,0,0))
 
         inputBox1 = inputText1.get_rect(center = self.player1Rect.center)
         inputBox2 = inputText2.get_rect(center = self.player2Rect.center)
@@ -494,56 +491,56 @@ class PokerGame(PygameGame):
         inputBox7 = inputText7.get_rect(center = self.player7Rect.center)
         inputBox8 = inputText8.get_rect(center = self.player8Rect.center)
 
-        if self.player1.isPlaying: 
+        if config.playerList[0].isPlaying: 
             screen.blit(removePlayer1, removePlayer1Box)
         elif self.player1InputActive:
             screen.blit(inputText1, inputBox1)
         else: 
             screen.blit(addText, player1AddBox)
 
-        if self.player2.isPlaying: 
+        if config.playerList[1].isPlaying: 
             screen.blit(removePlayer2, removePlayer2Box)
         elif self.player2InputActive:
             screen.blit(inputText2, inputBox2)
         else: 
             screen.blit(addText, player2AddBox)
 
-        if self.player3.isPlaying: 
+        if config.playerList[2].isPlaying: 
             screen.blit(removePlayer3, removePlayer3Box)
         elif self.player3InputActive:
             screen.blit(inputText3, inputBox3)
         else: 
             screen.blit(addText, player3AddBox)
             
-        if self.player4.isPlaying: 
+        if config.playerList[3].isPlaying: 
             screen.blit(removePlayer4, removePlayer4Box)
         elif self.player4InputActive:
             screen.blit(inputText4, inputBox4)
         else: 
             screen.blit(addText, player4AddBox)
             
-        if self.player5.isPlaying: 
+        if config.playerList[4].isPlaying: 
             screen.blit(removePlayer5, removePlayer5Box)
         elif self.player5InputActive:
             screen.blit(inputText5, inputBox5)
         else: 
             screen.blit(addText, player5AddBox)
             
-        if self.player6.isPlaying: 
+        if config.playerList[5].isPlaying: 
             screen.blit(removePlayer6, removePlayer6Box)
         elif self.player6InputActive:
             screen.blit(inputText6, inputBox6)
         else: 
             screen.blit(addText, player6AddBox)
         
-        if self.player7.isPlaying: 
+        if config.playerList[6].isPlaying: 
             screen.blit(removePlayer7, removePlayer7Box)
         elif self.player7InputActive:
             screen.blit(inputText7, inputBox7)
         else: 
             screen.blit(addText, player7AddBox)
         
-        if self.player8.isPlaying: 
+        if config.playerList[7].isPlaying: 
             screen.blit(removePlayer8, removePlayer8Box)
         elif self.player8InputActive:
             screen.blit(inputText8, inputBox8)
@@ -553,15 +550,408 @@ class PokerGame(PygameGame):
     # Play Game Screen Functions
     def playGameMousePressed(self, x ,y):
         if self.backRect.collidepoint(x, y):
-            self.gameMode = "configScreen"
+            config.gameMode = "config"
+        
+        '''if self.rotateButton.collidepoint(x,y):
+            config.currAction = "rotate"
+            string = "rotate\n"
+            string_encode = string.encode()
+            #self.ser.write(string_encode)'''
 
     def playGameKeyPressed(self, code, mod):
-        pass
+        if  len(pygame.key.name(code)) == 1: 
+            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
+                number = pygame.key.name(code)
+                config.currAction = "rotate"
+                string = "rotate"+number+"0"+"\n"
+                string_encode = string.encode()
+                self.ser.write(string_encode)
    
     def playGameTimerFired(self, dt):
-        pass
+        while config.currAction == "rotate":
+            config.rotateTime += dt
+            if config.rotateTime >= 20000: # 20 seconds
+                config.currAction = ""
+                config.rotateTime = 0
   
     def playGameRedrawAll(self, screen):
+        screen.fill((120, 120, 120))
+
+        # Back
+        pygame.draw.rect(screen, (255, 0, 0), self.backRect)
+        backWords = self.myFont.render("Back", True, (0,0,0))
+        backBox = backWords.get_rect(center = self.backRect.center)
+        screen.blit(backWords, backBox)
+
+        # Rotate Button
+        pygame.draw.rect(screen, (75, 50, 150), self.rotateButton)
+        rotateWords = self.myFont.render("Rotate", True, (0,0,0))
+        rotateBox = rotateWords.get_rect(center = self.rotateButton.center)
+        screen.blit(rotateWords, rotateBox)
+        
+        # Table
+        pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
+
+        # Pot
+        thePot = self.myFont.render("The Pot", True, (0,0,0))
+        thePotBox = thePot.get_rect(center = (self.width//2, self.height//2-self.height//25))
+        screen.blit(thePot, thePotBox)
+        potSizeString = "$%d" % config.potSize
+        potSize = self.myFont.render(potSizeString, True, (0,0,0))
+        potSizeBox = potSize.get_rect(center = (self.width//2, self.height//2+self.height//25))
+        screen.blit(potSize, potSizeBox)
+        
+        # Dealer 
+        dealerRect = self.bigDealerChip.get_rect(center=(self.width//2,self.height//10))
+        screen.blit(self.bigDealerChip, dealerRect)
+
+        dealer1Rect = self.dealerChip.get_rect(center = (self.player1Rect.x, self.player1Rect.y+self.player1Rect.h))
+        dealer2Rect = self.dealerChip.get_rect(center = (self.player2Rect.x, self.player2Rect.y+self.player2Rect.h))
+        dealer3Rect = self.dealerChip.get_rect(center = (self.player3Rect.x, self.player3Rect.y+self.player3Rect.h))
+        dealer4Rect = self.dealerChip.get_rect(center = (self.player4Rect.x, self.player4Rect.y+self.player4Rect.h))
+        dealer5Rect = self.dealerChip.get_rect(center = (self.player5Rect.x, self.player5Rect.y+self.player5Rect.h))
+        dealer6Rect = self.dealerChip.get_rect(center = (self.player6Rect.x, self.player6Rect.y+self.player6Rect.h))
+        dealer7Rect = self.dealerChip.get_rect(center = (self.player7Rect.x, self.player7Rect.y+self.player7Rect.h))
+        dealer8Rect = self.dealerChip.get_rect(center = (self.player8Rect.x, self.player8Rect.y+self.player8Rect.h))
+        
+        # Players
+        player1Name = self.myFont.render(config.playerList[0].name, True, (0,0,0))
+        player2Name = self.myFont.render(config.playerList[1].name, True, (0,0,0))
+        player3Name = self.myFont.render(config.playerList[2].name, True, (0,0,0))
+        player4Name = self.myFont.render(config.playerList[3].name, True, (0,0,0))
+        player5Name = self.myFont.render(config.playerList[4].name, True, (0,0,0))
+        player6Name = self.myFont.render(config.playerList[5].name, True, (0,0,0))
+        player7Name = self.myFont.render(config.playerList[6].name, True, (0,0,0))
+        player8Name = self.myFont.render(config.playerList[7].name, True, (0,0,0))
+
+        player1Stack = self.myFont.render("$"+str(config.playerList[0].stackSize), True, (0,0,0))
+        player2Stack = self.myFont.render("$"+str(config.playerList[1].stackSize), True, (0,0,0))
+        player3Stack = self.myFont.render("$"+str(config.playerList[2].stackSize), True, (0,0,0))
+        player4Stack = self.myFont.render("$"+str(config.playerList[3].stackSize), True, (0,0,0))
+        player5Stack = self.myFont.render("$"+str(config.playerList[4].stackSize), True, (0,0,0))
+        player6Stack = self.myFont.render("$"+str(config.playerList[5].stackSize), True, (0,0,0))
+        player7Stack = self.myFont.render("$"+str(config.playerList[6].stackSize), True, (0,0,0))
+        player8Stack = self.myFont.render("$"+str(config.playerList[7].stackSize), True, (0,0,0))
+
+        player1NameBox = player1Name.get_rect(center = (self.player1Rect.x+self.player1Rect.w//2, self.player1Rect.y+self.player1Rect.h//4))
+        player2NameBox = player2Name.get_rect(center = (self.player2Rect.x+self.player2Rect.w//2, self.player2Rect.y+self.player2Rect.h//4))
+        player3NameBox = player3Name.get_rect(center = (self.player3Rect.x+self.player3Rect.w//2, self.player3Rect.y+self.player3Rect.h//4))
+        player4NameBox = player4Name.get_rect(center = (self.player4Rect.x+self.player4Rect.w//2, self.player4Rect.y+self.player4Rect.h//4))
+        player5NameBox = player5Name.get_rect(center = (self.player5Rect.x+self.player5Rect.w//2, self.player5Rect.y+self.player5Rect.h//4))
+        player6NameBox = player6Name.get_rect(center = (self.player6Rect.x+self.player6Rect.w//2, self.player6Rect.y+self.player6Rect.h//4))
+        player7NameBox = player7Name.get_rect(center = (self.player7Rect.x+self.player7Rect.w//2, self.player7Rect.y+self.player7Rect.h//4))
+        player8NameBox = player8Name.get_rect(center = (self.player8Rect.x+self.player8Rect.w//2, self.player8Rect.y+self.player8Rect.h//4))
+
+        stack1Box = player1Stack.get_rect(center = (self.player1Rect.x+self.player1Rect.w//2, self.player1Rect.y+self.player1Rect.h*3//4))
+        stack2Box = player2Stack.get_rect(center = (self.player2Rect.x+self.player2Rect.w//2, self.player2Rect.y+self.player2Rect.h*3//4))
+        stack3Box = player3Stack.get_rect(center = (self.player3Rect.x+self.player3Rect.w//2, self.player3Rect.y+self.player3Rect.h*3//4))
+        stack4Box = player4Stack.get_rect(center = (self.player4Rect.x+self.player4Rect.w//2, self.player4Rect.y+self.player4Rect.h*3//4))
+        stack5Box = player5Stack.get_rect(center = (self.player5Rect.x+self.player5Rect.w//2, self.player5Rect.y+self.player5Rect.h*3//4))
+        stack6Box = player6Stack.get_rect(center = (self.player6Rect.x+self.player6Rect.w//2, self.player6Rect.y+self.player6Rect.h*3//4))
+        stack7Box = player7Stack.get_rect(center = (self.player7Rect.x+self.player7Rect.w//2, self.player7Rect.y+self.player7Rect.h*3//4))
+        stack8Box = player8Stack.get_rect(center = (self.player8Rect.x+self.player8Rect.w//2, self.player8Rect.y+self.player8Rect.h*3//4))
+
+        if config.playerList[0].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
+            screen.blit(player1Name, player1NameBox)
+            screen.blit(player1Stack, stack1Box)
+
+        if config.playerList[1].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
+            screen.blit(player2Name, player2NameBox)
+            screen.blit(player2Stack, stack2Box)
+
+        if config.playerList[2].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
+            screen.blit(player3Name, player3NameBox)
+            screen.blit(player3Stack, stack3Box)
+            
+        if config.playerList[3].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
+            screen.blit(player4Name, player4NameBox)
+            screen.blit(player4Stack, stack4Box)
+            
+        if config.playerList[4].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
+            screen.blit(player5Name, player5NameBox)
+            screen.blit(player5Stack, stack5Box)
+            
+        if config.playerList[5].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
+            screen.blit(player6Name, player6NameBox)
+            screen.blit(player6Stack, stack6Box)
+        
+        if config.playerList[6].isPlaying:           
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
+            screen.blit(player7Name, player7NameBox)
+            screen.blit(player7Stack, stack7Box)
+        
+        if config.playerList[7].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
+            screen.blit(player8Name, player8NameBox)
+            screen.blit(player8Stack, stack8Box)
+
+        # Player Dealer
+        num = config.playerList[0].num
+        if num == 1: screen.blit(self.dealerChip, dealer1Rect)
+        if num == 2: screen.blit(self.dealerChip, dealer2Rect)
+        if num == 3: screen.blit(self.dealerChip, dealer3Rect)
+        if num == 4: screen.blit(self.dealerChip, dealer4Rect)
+        if num == 5: screen.blit(self.dealerChip, dealer5Rect)
+        if num == 6: screen.blit(self.dealerChip, dealer6Rect)
+        if num == 7: screen.blit(self.dealerChip, dealer7Rect)
+        if num == 8: screen.blit(self.dealerChip, dealer8Rect)
+
+    # Chip Colors Config
+    def chipConfigMousePressed(self, x, y):
+        self.whiteInputActive = False
+        self.redInputActive = False
+        self.greenInputActive = False
+        self.blueInputActive = False
+        self.blackInputActive = False
+
+        if self.backRect.collidepoint(x, y):
+            config.gameMode = "config"
+
+        elif self.whiteRect.collidepoint(x, y):
+            self.tempWhiteNum = ""
+            self.whiteInputActive = True
+
+        elif self.redRect.collidepoint(x, y):
+            self.tempRedNum = ""
+            self.redInputActive = True
+
+        elif self.greenRect.collidepoint(x, y):
+            self.tempGreenNum = ""
+            self.greenInputActive = True
+        
+        elif self.blueRect.collidepoint(x, y):
+            self.tempBlueNum = ""
+            self.blueInputActive = True
+        
+        elif self.blackRect.collidepoint(x, y):
+            self.tempBlackNum = ""
+            self.blackInputActive = True
+
+    
+    def chipConfigKeyPressed(self, code, mod):
+        # Numbers
+        if  len(pygame.key.name(code)) == 1: 
+            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
+                number = pygame.key.name(code)
+                if self.whiteInputActive:
+                    self.tempWhiteNum += number
+                if self.redInputActive:
+                    self.tempRedNum += number
+                if self.greenInputActive:
+                    self.tempGreenNum += number
+                if self.blueInputActive:
+                    self.tempBlueNum += number
+                if self.blackInputActive:
+                    self.tempBlackNum += number
+                
+
+        # Enter/Return
+        elif code == pygame.K_RETURN:
+            if self.whiteInputActive:
+                self.whiteInputActive = False
+                config.chipValues[0] = int(self.tempWhiteNum)
+                self.tempWhiteNum = ""
+
+            elif self.redInputActive:
+                self.redInputActive = False
+                config.chipValues[1] = int(self.tempRedNum)
+                self.tempRedNum = ""
+
+            elif self.greenInputActive:
+                self.greenInputActive = False
+                config.chipValues[2] = int(self.tempGreenNum)
+                self.tempGreenNum = ""
+
+            elif self.blueInputActive:
+                self.blueInputActive = False
+                config.chipValues[3] = int(self.tempBlueNum)
+                self.tempBlueNum = ""
+
+            elif self.blackInputActive:
+                self.blackInputActive = False
+                config.chipValues[4] = int(self.tempBlackNum)
+                self.tempBlackNum = ""
+
+           
+    def chipConfigTimerFired(self,dt):
+        pass   
+   
+    def chipConfigRedrawAll(self, screen):
+        screen.fill((56,79,70))
+
+        clickWords = self.myFont.render("Click to Edit Chip Values", True, (0,0,0))
+        clickBox = clickWords.get_rect(center = (self.width//2, self.height//8))
+        screen.blit(clickWords, clickBox)
+
+        whiteNum = self.myFont.render(str(config.chipValues[0]), True, (0,0,0))
+        redNum = self.myFont.render(str(config.chipValues[1]), True, (0,0,0))
+        greenNum = self.myFont.render(str(config.chipValues[2]), True, (0,0,0))
+        blueNum = self.myFont.render(str(config.chipValues[3]), True, (0,0,0))
+        blackNum = self.myFont.render(str(config.chipValues[4]), True, (0,0,0))
+
+        tempWhite = self.myFont.render(self.tempWhiteNum, True, (0,0,0))
+        tempRed = self.myFont.render(self.tempRedNum, True, (0,0,0))
+        tempGreen = self.myFont.render(self.tempGreenNum, True, (0,0,0))
+        tempBlue = self.myFont.render(self.tempBlueNum, True, (0,0,0))
+        tempBlack = self.myFont.render(self.tempBlackNum, True, (0,0,0))
+
+        whiteBox = whiteNum.get_rect(center = self.whiteRect.center)
+        redBox = redNum.get_rect(center = self.redRect.center)
+        greenBox = greenNum.get_rect(center = self.greenRect.center)
+        blueBox = blueNum.get_rect(center = self.blueRect.center)
+        blackBox = blackNum.get_rect(center = self.blackRect.center)
+
+        screen.blit(self.whiteChip, self.whiteRect)
+        screen.blit(self.redChip, self.redRect)
+        screen.blit(self.greenChip, self.greenRect)
+        screen.blit(self.blueChip, self.blueRect)
+        screen.blit(self.blackChip, self.blackRect)
+
+        if self.whiteInputActive:
+            screen.blit(tempWhite, whiteBox)
+        else:
+            screen.blit(whiteNum, whiteBox)
+
+        if self.redInputActive:
+            screen.blit(tempRed, redBox)
+        else:
+            screen.blit(redNum, redBox)
+
+        if self.greenInputActive:
+            screen.blit(tempGreen, greenBox)
+        else:
+            screen.blit(greenNum, greenBox)
+
+        if self.blueInputActive:
+            screen.blit(tempBlue, blueBox)
+        else:
+            screen.blit(blueNum, blueBox)
+
+        if self.blackInputActive:
+            screen.blit(tempBlack, blackBox)
+        else:
+            screen.blit(blackNum, blackBox)
+
+    # Stack Sizes
+    def stackSizesMousePressed(self, x, y):
+        self.stack1InputActive = False
+        self.stack2InputActive = False
+        self.stack3InputActive = False
+        self.stack4InputActive = False
+        self.stack5InputActive = False
+        self.stack6InputActive = False
+        self.stack7InputActive = False
+        self.stack8InputActive = False
+
+        if self.backRect.collidepoint(x, y):
+            config.gameMode = "config"
+
+        elif self.player1Rect.collidepoint(x, y) and config.playerList[0].isPlaying:
+            self.tempStack1 = ""
+            self.stack1InputActive = True
+        
+        elif self.player2Rect.collidepoint(x, y) and config.playerList[1].isPlaying:
+            self.tempStack2 = ""
+            self.stack2InputActive = True
+        
+        elif self.player3Rect.collidepoint(x, y) and config.playerList[2].isPlaying:
+            self.tempStack3 = ""
+            self.stack3InputActive = True
+        
+        elif self.player4Rect.collidepoint(x, y) and config.playerList[3].isPlaying:
+            self.tempStack4 = ""
+            self.stack4InputActive = True
+        
+        elif self.player5Rect.collidepoint(x, y) and config.playerList[4].isPlaying:
+            self.tempStack5 = ""
+            self.stack5InputActive = True
+        
+        elif self.player6Rect.collidepoint(x, y) and config.playerList[5].isPlaying:
+            self.tempStack6 = ""
+            self.stack6InputActive = True
+        
+        elif self.player7Rect.collidepoint(x, y) and config.playerList[6].isPlaying:
+            self.tempStack7 = ""
+            self.stack7InputActive = True
+
+        elif self.player8Rect.collidepoint(x, y) and config.playerList[7].isPlaying:
+            self.tempStack8 = ""
+            self.stack8InputActive = True
+    
+    def stackSizesKeyPressed(self, code, mod):
+        # Numbers
+        if  len(pygame.key.name(code)) == 1: 
+            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
+                number = pygame.key.name(code)
+                if self.stack1InputActive:
+                    self.tempStack1 += number
+                if self.stack2InputActive:
+                    self.tempStack2 += number
+                if self.stack3InputActive:
+                    self.tempStack3 += number
+                if self.stack4InputActive:
+                    self.tempStack4 += number
+                if self.stack5InputActive:
+                    self.tempStack5 += number
+                if self.stack6InputActive:
+                    self.tempStack6 += number
+                if self.stack7InputActive:
+                    self.tempStack7 += number
+                if self.stack8InputActive:
+                    self.tempStack8 += number
+                
+        # Enter/Return
+        elif code == pygame.K_RETURN:
+            if self.stack1InputActive:
+                self.stack1InputActive = False
+                config.playerList[0].stackSize = int(self.tempStack1)
+                self.tempStack1 = ""
+
+            elif self.stack2InputActive:
+                self.stack2InputActive = False
+                config.playerList[1].stackSize = int(self.tempStack2)
+                self.tempStack2 = ""
+
+            elif self.stack3InputActive:
+                self.stack3InputActive = False
+                config.playerList[2].stackSize = int(self.tempStack3)
+                self.tempStack3 = ""
+
+            elif self.stack4InputActive:
+                self.stack4InputActive = False
+                config.playerList[3].stackSize = int(self.tempStack4)
+                self.tempStack4 = ""
+
+            elif self.stack5InputActive:
+                self.stack5InputActive = False
+                config.playerList[4].stackSize = int(self.tempStack5)
+                self.tempStack5 = ""
+
+            elif self.stack6InputActive:
+                self.stack6InputActive = False
+                config.playerList[5].stackSize = int(self.tempStack6)
+                self.tempStack6 = ""
+
+            elif self.stack7InputActive:
+                self.stack7InputActive = False
+                config.playerList[6].stackSize = int(self.tempStack7)
+                self.tempStack7 = ""
+            
+            elif self.stack8InputActive:
+                self.stack8InputActive = False
+                config.playerList[7].stackSize = int(self.tempStack8)
+                self.tempStack8 = ""
+
+    def stackSizesTimerFired(self,dt):
+        pass   
+   
+    def stackSizesRedrawAll(self, screen):
         screen.fill((120, 120, 120))
 
         # Back
@@ -574,27 +964,19 @@ class PokerGame(PygameGame):
         pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
 
         # Pot
-        thePot = self.myFont.render("The Pot", True, (0,0,0))
-        thePotBox = thePot.get_rect(center = (self.width/2, self.height/2-self.height/25))
-        screen.blit(thePot, thePotBox)
-        potSizeString = "$%d" % self.potSize
-        potSize = self.myFont.render(potSizeString, True, (0,0,0))
-        potSizeBox = potSize.get_rect(center = (self.width/2, self.height/2+self.height/25))
-        screen.blit(potSize, potSizeBox)
-        
-        # Dealer 
-        dealerRect = self.dealerChip.get_rect(center=(self.width/2,self.height/10))
-        screen.blit(self.dealerChip, dealerRect)
+        editStack = self.myFont.render("Click to Edit Stack Sizes", True, (0,0,0))
+        editBox = editStack.get_rect(center = (self.width//2, self.height//2))
+        screen.blit(editStack, editBox)    
 
         # Players
-        player1Name = self.myFont.render(self.player1.name, True, (0,0,0))
-        player2Name = self.myFont.render(self.player2.name, True, (0,0,0))
-        player3Name = self.myFont.render(self.player3.name, True, (0,0,0))
-        player4Name = self.myFont.render(self.player4.name, True, (0,0,0))
-        player5Name = self.myFont.render(self.player5.name, True, (0,0,0))
-        player6Name = self.myFont.render(self.player6.name, True, (0,0,0))
-        player7Name = self.myFont.render(self.player7.name, True, (0,0,0))
-        player8Name = self.myFont.render(self.player8.name, True, (0,0,0))
+        player1Name = self.myFont.render(config.playerList[0].name, True, (0,0,0))
+        player2Name = self.myFont.render(config.playerList[1].name, True, (0,0,0))
+        player3Name = self.myFont.render(config.playerList[2].name, True, (0,0,0))
+        player4Name = self.myFont.render(config.playerList[3].name, True, (0,0,0))
+        player5Name = self.myFont.render(config.playerList[4].name, True, (0,0,0))
+        player6Name = self.myFont.render(config.playerList[5].name, True, (0,0,0))
+        player7Name = self.myFont.render(config.playerList[6].name, True, (0,0,0))
+        player8Name = self.myFont.render(config.playerList[7].name, True, (0,0,0))
 
         player1NameBox = player1Name.get_rect(center = self.player1Rect.center)
         player2NameBox = player2Name.get_rect(center = self.player2Rect.center)
@@ -605,71 +987,35 @@ class PokerGame(PygameGame):
         player7NameBox = player7Name.get_rect(center = self.player7Rect.center)
         player8NameBox = player8Name.get_rect(center = self.player8Rect.center)
 
-        if self.player1.isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width/20)
+        if config.playerList[0].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
             screen.blit(player1Name, player1NameBox)
 
-
-        if self.player2.isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width/20)
+        if config.playerList[1].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
             screen.blit(player2Name, player2NameBox)
 
-        if self.player3.isPlaying: 
-
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width/20)
+        if config.playerList[2].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
             screen.blit(player3Name, player3NameBox)
             
-        if self.player4.isPlaying: 
-
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width/20)
+        if config.playerList[3].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
             screen.blit(player4Name, player4NameBox)
             
-        if self.player5.isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width/20)
+        if config.playerList[4].isPlaying: 
+            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
             screen.blit(player5Name, player5NameBox)
             
-        if self.player6.isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width/20)
+        if config.playerList[5].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
             screen.blit(player6Name, player6NameBox)
         
-        if self.player7.isPlaying:           
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width/20)
+        if config.playerList[6].isPlaying:           
+            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
             screen.blit(player7Name, player7NameBox)
         
-        if self.player8.isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width/20)
+        if config.playerList[7].isPlaying:
+            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
             screen.blit(player8Name, player8NameBox)
 
-    # Chip Colors Config
-    def chipConfigMousePressed(self, x, y):
-        pass
-    
-    def chipConfigKeyPressed(self, code, mod):
-        pass
-  
-    def chipConfigTimerFired(self,dt):
-        pass   
-   
-    def chipConfigRedrawAll(self, screen):
-        screen.fill((56,79,70))
-        
-        whiteRect = self.whiteChip.get_rect(center=(self.width/4,self.height/3))
-        redRect = self.redChip.get_rect(center=(self.width/2,self.height/3))
-        greenRect = self.greenChip.get_rect(center=(self.width*3/4,self.height/3))
-        blueRect = self.blueChip.get_rect(center=(self.width/3,self.height*2/3))
-        blackRect = self.blackChip.get_rect(center=(self.width*2/3,self.height*2/3))
-
-        screen.blit(self.whiteChip, whiteRect)
-        screen.blit(self.redChip, redRect)
-        screen.blit(self.greenChip, greenRect)
-        screen.blit(self.blueChip, blueRect)
-        screen.blit(self.blackChip, blackRect)
-
-class Player(object):
-    def __init__(self, name):
-        self.isPlaying = False
-        self.stackSize = 0
-        self.name = name
-
-
-PokerGame().run()
