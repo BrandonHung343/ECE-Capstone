@@ -106,6 +106,9 @@ class PokerGame(PygameGame):
         # Back Button 
         self.backRect = pygame.Rect(self.width//20, self.height//20, self.width//15, self.width//15)
 
+        # Calibrate Button
+        self.calibrateRect = pygame.Rect(self.width-self.width//10, self.height//20, self.width//15, self.width//15)
+
         # Chip Values
         self.whiteChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "whitechip.jpg")),(self.width//10, self.width//10))
         self.redChip = pygame.transform.scale(pygame.image.load(os.path.join(folder, "redchip.jpg")),(self.width//10, self.width//10))
@@ -713,6 +716,10 @@ class PokerGame(PygameGame):
         if self.backRect.collidepoint(x, y):
             config.gameMode = "config"
 
+        elif self.calibrateRect.collidepoint(x, y):
+            pass
+            # Call calibrate function
+
         elif self.whiteRect.collidepoint(x, y):
             self.tempWhiteNum = ""
             self.whiteInputActive = True
@@ -790,6 +797,12 @@ class PokerGame(PygameGame):
         backWords = self.myFont.render("Back", True, (0,0,0))
         backBox = backWords.get_rect(center = self.backRect.center)
         screen.blit(backWords, backBox)
+
+        # Calibrate
+        pygame.draw.rect(screen, (100, 60, 50), self.calibrateRect)
+        calibrateWords = self.myFont.render("Calibrate", True, (0,0,0))
+        calibrateBox = calibrateWords.get_rect(center = self.calibrateRect.center)
+        screen.blit(calibrateWords, calibrateBox)
 
         # Edit
         clickWords = self.myFont.render("Click to Edit Chip Values", True, (0,0,0))
