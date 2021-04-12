@@ -5,6 +5,8 @@ import random
 import math
 import os
 sys.path.insert(1, './GST')
+sys.path.insert(1, '../CompVision')
+import CompVision
 import config
 import serial
 
@@ -569,6 +571,8 @@ class PokerGame(PygameGame):
                 string = "rotate"+number+"0"+"\n"
                 string_encode = string.encode()
                 self.ser.write(string_encode)
+            elif ord(pygame.key.name(code)) == 115:
+                CompVision.get_stack_value(self.cvdat, debug=True)
    
     def playGameTimerFired(self, dt):
         while config.currAction == "rotate":
@@ -717,8 +721,9 @@ class PokerGame(PygameGame):
             config.gameMode = "config"
 
         elif self.calibrateRect.collidepoint(x, y):
-            pass
             # Call calibrate function
+            self.cvdat = CompVision.CVData(1, 2, 4, 9, config.chipValues)
+            self.cvdat = CompVision.calibrate(self.cvdat)
 
         elif self.whiteRect.collidepoint(x, y):
             self.tempWhiteNum = ""

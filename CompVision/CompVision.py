@@ -5,7 +5,8 @@ import colorsys
 import matplotlib.pyplot as plt
 
 class CVData():
-    def __init__(self, numDomColors, chipHeight, chipWidth, values):
+    def __init__(self, cam, numDomColors, chipHeight, chipWidth, values):
+        self.cam = cam
         self.lb = np.zeros((3, numDomColors, len(values)))
         self.ub = np.zeros((3, numDomColors, len(values)))
         self.d1 = 5
@@ -92,7 +93,7 @@ def average_over_frame(event, x, y, flags, params):
         dat.lb[:, :, prog] = lb
         dat.ub[:, :, prog] = ub
         dat.recList = []
-        dat.print_info()
+        # dat.print_info()
 
 
 def get_color_averages(frame):
@@ -137,7 +138,7 @@ def clean_morphological(dat, frame):
 
 
 def calibrate(dat):
-    cam = 1
+    cam = dat.cam
     cv2.namedWindow("calibrate")
     cap = cv2.VideoCapture(cam)
     cap.open(cam)
@@ -178,7 +179,7 @@ def color_mask(dat, frame, chip):
 
 
 def get_stack_value(dat, debug=False):
-    cam = 1
+    cam = dat.cam
     cap = cv2.VideoCapture(cam)
     cap.open(cam)
     ret, frame = cap.read()
@@ -252,16 +253,16 @@ def test_stereo():
     plt.show()
 
 
-def main():
-    dat = CVData(2, 4, 9, [50, 500, 5])
-    # dat.print_info()
-    dat = calibrate(dat)
-    get_stack_value(dat, debug=True)
-    # dat.print_info()
-    # test_stereo()
+# def main():
+#     dat = CVData(2, 4, 9, [50, 500, 5])
+#     # dat.print_info()
+#     dat = calibrate(dat)
+#     get_stack_value(dat, debug=True)
+#     # dat.print_info()
+#     # test_stereo()
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 
