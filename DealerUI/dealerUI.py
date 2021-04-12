@@ -94,7 +94,7 @@ class PokerGame(PygameGame):
 
         # Servo
 
-        self.ser = serial.Serial('/dev/cu.usbmodem144301',9600)
+        #self.ser = serial.Serial('/dev/cu.usbmodem144301',9600)
 
 
         # Config Screen 
@@ -785,6 +785,13 @@ class PokerGame(PygameGame):
     def chipConfigRedrawAll(self, screen):
         screen.fill((56,79,70))
 
+        # Back
+        pygame.draw.rect(screen, (255, 0, 0), self.backRect)
+        backWords = self.myFont.render("Back", True, (0,0,0))
+        backBox = backWords.get_rect(center = self.backRect.center)
+        screen.blit(backWords, backBox)
+
+        # Edit
         clickWords = self.myFont.render("Click to Edit Chip Values", True, (0,0,0))
         clickBox = clickWords.get_rect(center = (self.width//2, self.height//8))
         screen.blit(clickWords, clickBox)
