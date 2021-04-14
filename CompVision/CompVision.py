@@ -9,22 +9,23 @@ class CVData():
         self.cam = cam
         self.lb = np.zeros((3, numDomColors, len(values)))
         self.ub = np.zeros((3, numDomColors, len(values)))
-        self.d1 = 5
-        self.d2 = 75
-        self.d3 = 10
+        self.d1 = 7
+        self.d2 = 35
+        self.d3 = 1
         self.numPoints = 2
-        self.kSize = 15
+        self.kSize = 35
         self.cK = 10
         self.eK = 50
         self.oK = 10
         self.sigX = 0.5
         self.recList = []
-        self.domColors = 2
+        self.domColors = numDomColors
         self.chipWidth = chipWidth
         self.chipHeight = chipHeight
         self.delta = 30
         self.values = values
         self.prog = 0
+        self.cap = cv2.VideoCapture(cam)
         # Note: size of lb, ub is 3, numDomColors of chip, numValues of chip,
 
     def print_info(self):
@@ -35,20 +36,33 @@ class CVData():
 def color_calib(event, x, y, flags, params):
     cal_frame = params[0]
     dat = params[1]
+    d1 = dat.d1
+    d2 = dat.d2
+    d3 = dat.d3
+    prog = dat.prog
+    ub = np.zeros((3, dat.domColors))
+    lb = np.zeros((3, dat.domColors))
+    
 
-    delta = dat.delta
     if event == cv2.EVENT_LBUTTONDOWN:
-        for i in range(3):
-            if cal_frame[y,x,i] + delta > 255:
-                ub[i] = 255
-            else:
-                ub[i] = cal_frame[y,x,i] + delta
-            if cal_frame[y,x,i] - delta < 0:
-                lb[i] = 0
-            else:
-                lb[i] = cal_frame[y,x,i] - delta
-        dat.lb = lb
-        dat.ub = ub
+        print("RGB: ", cal_frame[y, x, :])
+
+        dat.recList.append(cal_frame[y, x, :])
+        if len(dat.recList) == dat.domColors:
+            print("Computing mask")
+            for i in range(dat.domColors):
+                chipColor = dat.recList[i]
+                # for LAB
+                lb[:, i] = np.array([chipColor[0] - d1, chipColor[1] - d2, 0])
+                ub[:, i] = np.array([chipColor[0] + d1, chipColor[1] + d2, 255])
+                
+                for k in range(3):
+                    lb[k, i] = max(lb[k, i], 0)
+                    ub[k, i] = min(ub[k, i], 255)
+            
+            dat.lb[:, :, prog] = lb
+            dat.ub[:, :, prog] = ub
+            dat.recList = []
 
 
 def average_over_frame(event, x, y, flags, params):
@@ -66,6 +80,7 @@ def average_over_frame(event, x, y, flags, params):
         prog = dat.prog
         ub = np.zeros((3, dat.domColors))
         lb = np.zeros((3, dat.domColors))
+        print("RGB: ", cal_frame[y, x, :])
 
         dat.recList.append((x, y))
         # print(dat.recList)
@@ -81,10 +96,21 @@ def average_over_frame(event, x, y, flags, params):
         
         for i in range(dat.domColors):
             avg_color = avg_colors[i]
-            avg_color = avg_color[0]
+            avg_color = np.reshape(avg_color[0], (1, 1, 3))
+            print(avg_color)
+            avg_color = cv2.cvtColor(avg_color, cv2.COLOR_BGR2HSV)
+            print(avg_color)
+            avg_color = np.reshape(avg_color, (3))
+            print(avg_color)
+
+            avg_color = np.array([avg_color[0] / 2, avg_color[1] * 255, avg_color[2]])
+            print(avg_color)
+
             # for LAB
             lb[:, i] = np.array([avg_color[0] - d1, avg_color[1] - d2, 0])
             ub[:, i] = np.array([avg_color[0] + d1, avg_color[1] + d2, 255])
+
+            print(lb[:, i])
             
             for k in range(3):
                 lb[k, i] = max(lb[k, i], 0)
@@ -116,11 +142,23 @@ def get_color_dominant(frame):
     _, labels, centers = cv2.kmeans(tempFrame, nColors, None, criteria, 10, flags)
     _, counts = np.unique(labels, return_counts=True)
     # print(counts)
+
     # print(centers)
     hsv = list(zip(centers, counts))
-    hsv.sort(key=lambda x: x[1])
+    hsv.sort(key=lambda x: -x[1])
     print(hsv)
     # rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
+    # for h in hsv:
+    #     print(h)
+    #     tmp = np.reshape(h[0], (1, 1, 3))
+    #     tmp = cv2.cvtColor(tmp, cv2.COLOR_HSV2RGB)
+    #     tmp = np.reshape(tmp, (1, 3))
+    #     tmp = np.int32(tmp)
+    #     print(tmp)
+    #     tmp[0, 0] = tmp[0, 0] >> 16 & 0xFF
+    #     tmp[0, 1] = tmp[0, 1] >> 8 & 0xFF
+    #     tmp[0, 2] = tmp[0, 2] & 0xFF
+    #     print("RGB Conversion: ", tmp)
     return hsv # np.array(rgb) * 255
 
 
@@ -131,6 +169,7 @@ def clean_morphological(dat, frame):
     im = cv2.morphologyEx(im, cv2.MORPH_OPEN, (dat.oK, dat.oK))
     # im = cv2.erode(im, (dat.eK, dat.eK), 1)
     im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
+    im = cv2.dilate(im, (dat.cK, dat.cK))
 
 
     # im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, (dat.oK, dat.oK))
@@ -139,22 +178,30 @@ def clean_morphological(dat, frame):
 
 def calibrate(dat):
     cam = dat.cam
+    cap = dat.cap
     cv2.namedWindow("calibrate")
-    cap = cv2.VideoCapture(cam)
     cap.open(cam)
     ret, cal_frame = cap.read()
-    origFrame = np.copy(cal_frame)
-    cal_frame = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2HSV)
-    # cal_frame = cv2.GaussianBlur(cal_frame, (dat.kSize, dat.kSize), dat.sigX)
+
+    binThresh = 220
+    grey_mask = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2GRAY)
+    grey_mask[grey_mask > binThresh] = 0
+    grey_mask[grey_mask > 0] = 1
+    cal_frame = cv2.bitwise_and(cal_frame, cal_frame, mask=grey_mask)
+
+    cal_frame = cv2.morphologyEx(cal_frame, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
     cal_frame = cv2.bilateralFilter(cal_frame, dat.kSize, 75, 75)
+
     org = (13, 25)
     color = (255, 255, 255)
     font = cv2.FONT_HERSHEY_SIMPLEX
+    debug = True
     cv2.setMouseCallback("calibrate", average_over_frame, [cal_frame, dat]);
+
     for i in range(len(dat.values)):
         dat.prog = i
         txt = 'Chip Value: ' + str(int(dat.values[dat.prog]))
-        tmp = np.copy(origFrame)
+        tmp = np.copy(cal_frame)
         cv2.putText(tmp, txt, org, font, 1, color, 2)
         # cal_frame = white_balance(cal_frame)
         while True:
@@ -162,13 +209,12 @@ def calibrate(dat):
             k = cv2.waitKey(1) & 0xFF
             if k == 13:
                 break
-
     cv2.destroyAllWindows()
     return dat
 
 
 def color_mask(dat, frame, chip):
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(frame, dat.lb[:, 0, chip], dat.ub[:, 0, chip])
     # for i in range(len(dat.values)):
     for j in range(dat.domColors):
@@ -180,14 +226,79 @@ def color_mask(dat, frame, chip):
 
 def get_stack_value(dat, debug=False):
     cam = dat.cam
-    cap = cv2.VideoCapture(cam)
+    cap = dat.cap
     cap.open(cam)
     ret, frame = cap.read()
+    cal_frame = cv2.bilateralFilter(frame, dat.kSize, 75, 75)
 
     for i in range(len(dat.values)):
         masked = color_mask(dat, frame, i)
-        masked = cv2.cvtColor(masked, cv2.COLOR_HSV2RGB)
-        cal_frame = cv2.bilateralFilter(frame, dat.kSize, 75, 75)
+        masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
+        masked = clean_morphological(dat, masked)
+        
+        masked, bigBox = bounding_box(masked)
+        
+        if debug:
+            print(bigBox)
+            cv2.namedWindow("debug_stack")
+            cv2.imshow("debug_stack", masked)
+            key = cv2.waitKey(0)
+
+        if np.abs(bigBox[0] - dat.chipWidth) <= dat.delta:
+            print(bigBox[1] / dat.chipHeight)
+            print(np.round(bigBox[1] / dat.chipHeight) * dat.values[i])
+        else:
+            print("no detection")
+
+        
+
+    cv2.destroyAllWindows()
+    return
+
+
+
+def test_image(file, dat):
+    cv2.namedWindow("calibrate")
+    cal_frame = cv2.imread(file)
+    # origFrame = np.copy(cal_frame)
+    # eat out the white
+    binThresh = 220
+    grey_mask = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2GRAY)
+    grey_mask[grey_mask > binThresh] = 0
+    grey_mask[grey_mask > 0] = 1
+    cv2.imshow("calibrate", grey_mask)
+    cv2.waitKey(0)
+    cal_frame = cv2.bitwise_and(cal_frame, cal_frame, mask=grey_mask)
+    cv2.imshow("calibrate", cal_frame)
+    cv2.waitKey(0)
+
+    cal_frame = cv2.morphologyEx(cal_frame, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
+    cal_frame = cv2.bilateralFilter(cal_frame, dat.kSize, 75, 75)
+    
+    # cal_frame = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2HSV)
+    # cal_frame = cv2.GaussianBlur(cal_frame, (dat.kSize, dat.kSize), dat.sigX)
+    # origFrame = cv2.cvtColor(cal_frame, cv2.COLOR_BGR2HSV)
+    org = (13, 25)
+    color = (255, 255, 255)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    debug = True
+    cv2.setMouseCallback("calibrate", average_over_frame, [cal_frame, dat]);
+
+    for i in range(len(dat.values)):
+        dat.prog = i
+        txt = 'Chip Value: ' + str(int(dat.values[dat.prog]))
+        tmp = np.copy(cal_frame)
+        cv2.putText(tmp, txt, org, font, 1, color, 2)
+        # cal_frame = white_balance(cal_frame)
+        while True:
+            cv2.imshow("calibrate", tmp)
+            k = cv2.waitKey(1) & 0xFF
+            if k == 13:
+                break
+
+    for i in range(len(dat.values)):
+        masked = color_mask(dat, cal_frame, i)
+        masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
         masked = clean_morphological(dat, masked)
         
         masked, bigBox = bounding_box(masked)
@@ -202,6 +313,8 @@ def get_stack_value(dat, debug=False):
             print(np.round(bigBox[1] / dat.chipHeight) * dat.values[i])
         else:
             print("no detection")
+
+        print(bigBox)
 
     cv2.destroyAllWindows()
     return
@@ -256,16 +369,19 @@ def test_stereo():
     plt.show()
 
 
-# def main():
-#     dat = CVData(2, 4, 9, [50, 500, 5])
-#     # dat.print_info()
-#     dat = calibrate(dat)
-#     get_stack_value(dat, debug=True)
-#     # dat.print_info()
-#     # test_stereo()
+def main():
+    # dat = CVData(2, 4, 9, [50, 500, 5])
+    # # dat.print_info()
+    dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
+    dat = calibrate(dat)
+    get_stack_value(dat, debug=True)
+    # dat.print_info()
+    # # test_stereo()
+    # dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
+    # test_image("setup.png", dat)
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
 
