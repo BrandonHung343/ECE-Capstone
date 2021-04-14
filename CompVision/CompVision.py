@@ -9,8 +9,8 @@ class CVData():
         self.cam = cam
         self.lb = np.zeros((3, numDomColors, len(values)))
         self.ub = np.zeros((3, numDomColors, len(values)))
-        self.d1 = 7
-        self.d2 = 35
+        self.d1 = 5
+        self.d2 = 20
         self.d3 = 1
         self.numPoints = 2
         self.kSize = 35
