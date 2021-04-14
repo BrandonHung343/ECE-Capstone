@@ -231,8 +231,13 @@ def get_stack_value(dat, debug=False):
     ret, frame = cap.read()
     cal_frame = cv2.bilateralFilter(frame, dat.kSize, 75, 75)
 
+    sizes = cal_frame.shape
+    r1 = int(np.rint(sizes[0] * 1/3))
+    r2 = int(np.rint(sizes[0] * 2/3))
+    cut_frame = cal_frame[r1:r2, :, :]
+
     for i in range(len(dat.values)):
-        masked = color_mask(dat, frame, i)
+        masked = color_mask(dat, cut_frame, i)
         masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
         masked = clean_morphological(dat, masked)
         
@@ -297,7 +302,15 @@ def test_image(file, dat):
                 break
 
     for i in range(len(dat.values)):
-        masked = color_mask(dat, cal_frame, i)
+        sizes = cal_frame.shape
+        r1 = int(np.rint(sizes[0] * 1/3))
+        r2 = int(np.rint(sizes[0] * 2/3))
+        
+
+
+        print(r1)
+        cut_frame = cal_frame[r1:r2, :, :]
+        masked = color_mask(dat, cut_frame, i)
         masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
         masked = clean_morphological(dat, masked)
         
@@ -369,19 +382,19 @@ def test_stereo():
     plt.show()
 
 
-def main():
-    # dat = CVData(2, 4, 9, [50, 500, 5])
-    # # dat.print_info()
-    dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
-    dat = calibrate(dat)
-    get_stack_value(dat, debug=True)
-    # dat.print_info()
-    # # test_stereo()
-    # dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
-    # test_image("setup.png", dat)
+# def main():
+#     # dat = CVData(2, 4, 9, [50, 500, 5])
+#     # # dat.print_info()
+#     # dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
+#     # dat = calibrate(dat)
+#     # get_stack_value(dat, debug=True)
+#     # dat.print_info()
+#     # # test_stereo()
+#     dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
+#     test_image("setup.png", dat)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
 
