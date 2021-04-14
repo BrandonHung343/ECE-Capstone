@@ -163,6 +163,7 @@ class PokerGame(PygameGame):
         self.tempGreenNum = ""
         self.tempBlueNum = ""
         self.tempBlackNum = ""
+        self.cvdat = CompVision.CVData(0, 2, 4, 9, config.chipValues)
 
         # Stack Sizes      
 
@@ -722,7 +723,7 @@ class PokerGame(PygameGame):
 
         elif self.calibrateRect.collidepoint(x, y):
             # Call calibrate function
-            self.cvdat = CompVision.CVData(1, 2, 4, 9, config.chipValues)
+            self.cvdat = CompVision.CVData(0, 2, 4, 9, config.chipValues)
             self.cvdat = CompVision.calibrate(self.cvdat)
 
         elif self.whiteRect.collidepoint(x, y):
