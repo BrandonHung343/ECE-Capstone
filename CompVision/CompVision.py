@@ -203,6 +203,9 @@ def get_stack_value(dat, debug=False):
         else:
             print("no detection")
 
+    cv2.destroyAllWindows()
+    return
+
 
 
 def white_balance(frame, window_name):
