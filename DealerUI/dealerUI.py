@@ -92,11 +92,12 @@ class PokerGame(PygameGame):
     def init(self):
         # General
         self.myFont = pygame.font.SysFont("Impact", self.width//40)
+        self.smallFont = pygame.font.SysFont("Impact", self.width//80)
         self.titleFont = pygame.font.SysFont("Rubik", self.width//15)
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
-        self.ser = serial.Serial('/dev/cu.usbmodem14101', 9600)
+        #self.ser = serial.Serial('/dev/cu.usbmodem14101', 9600)
 
 
         # Config Screen 
@@ -124,8 +125,12 @@ class PokerGame(PygameGame):
         self.pokerTable = pygame.Rect(self.width//10, self.height//10, self.width-self.width//5, self.height-self.height//5) 
         self.rotateButton = pygame.Rect(self.width-self.width//10, self.height//20, self.width//15, self.width//15)
 
-        # Players
+        self.foldRect = pygame.Rect(self.width-self.width//10-self.width//15, self.height//8-self.width//15, self.width//15, self.width//15)
+        self.raiseRect =pygame.Rect(self.width-self.width//10, self.height//8-self.width//15, self.width//15, self.width//15)
+        self.checkRect = pygame.Rect(self.width-self.width//10-self.width//15, self.height//8, self.width//15, self.width//15)
+        self.callRect = pygame.Rect(self.width-self.width//10, self.height//8, self.width//15, self.width//15)
 
+        # Players
         self.player8Rect = pygame.Rect(self.width//3-self.width//20, self.height//6-self.width//20, self.width//10, self.width//10)
         self.player7Rect = pygame.Rect(self.width//6-self.width//20, self.height//3-self.width//20, self.width//10, self.width//10)
         self.player6Rect = pygame.Rect(self.width//6-self.width//20, self.height*2//3-self.width//20, self.width//10, self.width//10)
@@ -591,7 +596,8 @@ class PokerGame(PygameGame):
             #self.ser.write(string_encode)'''
 
     def playGameKeyPressed(self, code, mod):
-        if  len(pygame.key.name(code)) == 1: 
+        pass
+        '''if  len(pygame.key.name(code)) == 1: 
             if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
                 number = pygame.key.name(code)
                 config.currAction = "rotate"
@@ -599,7 +605,7 @@ class PokerGame(PygameGame):
                 string_encode = string.encode()
                 self.ser.write(string_encode)
             elif ord(pygame.key.name(code)) == 115:
-                CompVision.get_stack_value(self.cvdat, debug=True)
+                CompVision.get_stack_value(self.cvdat, debug=True)'''
    
     def playGameTimerFired(self, dt):
         while config.currAction == "rotate":
@@ -610,6 +616,24 @@ class PokerGame(PygameGame):
   
     def playGameRedrawAll(self, screen):
         screen.fill((120, 120, 120))
+
+        # Actions 
+        pygame.draw.rect(screen, (170, 25, 25), self.foldRect)
+        pygame.draw.rect(screen, (25, 170, 25), self.raiseRect)
+        pygame.draw.rect(screen, (25, 25, 170), self.checkRect)
+        pygame.draw.rect(screen, (170, 170, 170), self.callRect)
+        foldWords = self.smallFont.render("Fold", True, (0,0,0))
+        raiseWords = self.smallFont.render("Raise", True, (0,0,0))
+        checkWords = self.smallFont.render("Check", True, (0,0,0))
+        callWords = self.smallFont.render("Call", True, (0,0,0))
+        foldBox = foldWords.get_rect(center = self.foldRect.center)
+        raiseBox = raiseWords.get_rect(center = self.raiseRect.center)
+        checkBox = checkWords.get_rect(center = self.checkRect.center)
+        callBox = callWords.get_rect(center = self.callRect.center)
+        screen.blit(foldWords, foldBox)
+        screen.blit(raiseWords, raiseBox)
+        screen.blit(checkWords, checkBox)
+        screen.blit(callWords, callBox)
 
         # Back
         pygame.draw.rect(screen, (255, 0, 0), self.backRect)
