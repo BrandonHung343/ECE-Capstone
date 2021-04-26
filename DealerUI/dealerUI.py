@@ -49,14 +49,14 @@ class PygameGame(object):
         self.bgColor = (255, 255, 255)
 
     def run(self):
-        # General Intialization
+        # General Initialization
         clock = pygame.time.Clock()
         screen = pygame.display.set_mode((self.width, self.height), pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
         pygame.display.set_caption(self.title)
 
         self._keys = dict()
 
-        # Poker Game Intialization
+        # Poker Game Initialization
         self.init()
         playing = True
         while playing:
@@ -98,7 +98,6 @@ class PokerGame(PygameGame):
 
         # Servo
         #self.ser = serial.Serial('/dev/cu.usbmodem14101', 9600)
-
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
@@ -253,9 +252,6 @@ class PokerGame(PygameGame):
                 config.gameMode = "playGame"
                 self.initializeGame()
                 # Rotate Servo to config.playerList[0]
-                config.roundMode = "preflop"
-                
-                print(config.currPlayers)
 
         elif self.addDelButton.collidepoint(x, y):
             config.gameMode = "addDel"
@@ -329,7 +325,7 @@ class PokerGame(PygameGame):
             config.playerList[0].name = ""
             if config.playerList[0].isPlaying:
                 config.playerList[0].isPlaying = False
-                config.playerList[0].stackSize = 0
+                config.playerList[0].stackSize = 50
             else:
                 self.player1InputActive = True
         
@@ -337,7 +333,7 @@ class PokerGame(PygameGame):
             config.playerList[1].name = ""
             if config.playerList[1].isPlaying:
                 config.playerList[1].isPlaying = False
-                config.playerList[1].stackSize = 0
+                config.playerList[1].stackSize = 50
             else:
                 self.player2InputActive = True
         
@@ -345,7 +341,7 @@ class PokerGame(PygameGame):
             config.playerList[2].name = ""
             if config.playerList[2].isPlaying:
                 config.playerList[2].isPlaying = False
-                config.playerList[2].stackSize = 0
+                config.playerList[2].stackSize = 50
             else:
                 self.player3InputActive = True
         
@@ -353,7 +349,7 @@ class PokerGame(PygameGame):
             config.playerList[3].name = ""
             if config.playerList[3].isPlaying:
                 config.playerList[3].isPlaying = False
-                config.playerList[3].stackSize = 0
+                config.playerList[3].stackSize = 50
             else:
                 self.player4InputActive = True
         
@@ -361,7 +357,7 @@ class PokerGame(PygameGame):
             config.playerList[4].name = ""
             if config.playerList[4].isPlaying:
                 config.playerList[4].isPlaying = False
-                config.playerList[4].stackSize = 0
+                config.playerList[4].stackSize = 50
             else:
                 self.player5InputActive = True
 
@@ -369,7 +365,7 @@ class PokerGame(PygameGame):
             config.playerList[5].name = ""
             if config.playerList[5].isPlaying:
                 config.playerList[5].isPlaying = False
-                config.playerList[5].stackSize = 0
+                config.playerList[5].stackSize = 50
             else:
                 self.player6InputActive = True
 
@@ -377,7 +373,7 @@ class PokerGame(PygameGame):
             config.playerList[6].name = ""
             if config.playerList[6].isPlaying:
                 config.playerList[6].isPlaying = False
-                config.playerList[6].stackSize = 0
+                config.playerList[6].stackSize = 50
             else:
                 self.player7InputActive = True
 
@@ -385,7 +381,7 @@ class PokerGame(PygameGame):
             config.playerList[7].name = ""
             if config.playerList[7].isPlaying:
                 config.playerList[7].isPlaying = False
-                config.playerList[7].stackSize = 0
+                config.playerList[7].stackSize = 50
             else:
                 self.player8InputActive = True
 
@@ -620,37 +616,66 @@ class PokerGame(PygameGame):
             config.playerList[currP].inHand = False
             config.currPlayers = config.currPlayers[1:]
 
-            # Check End Game 
+            # If End of Game 
             if (len(config.currPlayers) == 1):
-                self.endGame()
+                self.initializeGame()
 
-            # Check End Round 
-            if (config.currPlayers[0] == config.endPlayer):
-                self.endRound()
+            # Not End of Game
+            else:
+                # Check End Round
+                if (config.currPlayers[0] == config.endPlayer):
+                    self.endRound()
 
-            # Update End Player
-            if (currP == config.endPlayer):
-                config.endPlayer = config.currPlayers[0]
+                # If End Player Folds (Edge Case)
+                if (currP == config.endPlayer):
+                    config.endPlayer = config.currPlayers[0]
 
-            # Rotate Servo config.currPlayers[0]
+                # Rotate Servo config.currPlayers[0]
 
         # Raise   
         if self.raiseRect.collidepoint(x, y):
             currP = config.currPlayers[0]
+
+            # Update Bets
+            bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
+            config.maxBet = bet
+            self.updateBetList(currP, bet)
+
+            # Update Order of Curr Players
             tmpList = config.currPlayers[1:]+config.currPlayers[:1]
             config.currPlayers = tmpList
             config.endPlayer = currP
 
         # Check
         if self.checkRect.collidepoint(x, y): 
-            tmpList = config.currPlayers[1:]+config.currPlayers[:1]
-            config.currPlayers = tmpList
+            currP = config.currPlayers[0]
+            playerBetList = config.playerList[currP].betList
 
-            if (config.currPlayers[0] == config.endPlayer):
-                self.endRound()
+            # Empty Bet List
+            if (len(playerBetList) == 0):
+                if (config.maxBet == 0):
+                    tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                    config.currPlayers = tmpList
+
+                    if (config.currPlayers[0] == config.endPlayer):
+                        self.endRound()
+            # Not Empty Bet List
+            else: 
+                if (playerBetList[-1] == config.maxBet):
+                    tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                    config.currPlayers = tmpList
+
+                    if (config.currPlayers[0] == config.endPlayer):
+                        self.endRound()
 
         # Call    
         if self.callRect.collidepoint(x, y):
+            currP = config.currPlayers[0]
+
+            # Update Bets
+            self.updateBetList(currP, config.maxBet)
+
+            # Update Order of Curr Players
             tmpList = config.currPlayers[1:]+config.currPlayers[:1]
             config.currPlayers = tmpList
 
@@ -1290,13 +1315,23 @@ class PokerGame(PygameGame):
 
     # After Play Game is Pressed
     def initializeGame(self):
-        # Next Small Blind
-        for player in config.playerList:
-            if player.isPlaying:
-                config.smallBlind = player.num
-                break
+        config.roundMode = "preflop"
+
+        flag = False
+        # Update Small Blind
+        for i in range(config.smallBlind, 8):
+            if (flag): break         
+            if (config.playerList[i].isPlaying) and (i != smallBlind):
+                config.smallBlind = config.playerList[i].num
+                flag = True
+
+        for j in range(0, config.smallBlind):
+            if (flag): break
+            if (config.playerList[j].isPlaying) and (j != smallBlind):
+                config.smallBlind = config.playerList[j].num
+                flag = True 
                 
-        # Intialize Curr Player List (Prelop)
+        # Initialize Curr Player List (Prelop)
         config.currPlayers = []
         for i in range(config.smallBlind, 8):
             if config.playerList[i].isPlaying:
@@ -1312,23 +1347,43 @@ class PokerGame(PygameGame):
             else:
                 config.playerList[j].inHand = False
 
-        tmpList = config.currPlayers[2:]+config.currPlayers[:2] # Adjust for UTG 
+        # Update Bet Lists       
+        for player in config.playerList:
+            player.betList = []
+
+        config.playerList[config.currPlayers[0]].betList.append(config.BBVal//2) # SB
+        config.playerList[config.currPlayers[0]].stackSize -= config.BBVal//2
+
+        config.playerList[config.currPlayers[1]].betList.append(config.BBVal) # BB
+        config.playerList[config.currPlayers[1]].stackSize -= config.BBVal
+
+        config.potSize = (config.BBVal + config.BBVal//2)
+        config.maxBet = config.BBVal
+
+        # Adjust for UTG
+        tmpList = config.currPlayers[2:]+config.currPlayers[:2]  
         config.currPlayers = tmpList
 
         config.endPlayer = config.currPlayers[0]
 
     def endRound(self):
+        # Reset Bet Lists and Update Player Order
         config.currPlayers = []
+        
         for i in range(config.smallBlind, 8):
+            config.playerList[i].betList = []
             if config.playerList[i].isPlaying and config.playerList[i].inHand:
                 config.currPlayers.append(i)
 
         for j in range(0, config.smallBlind):
+            config.playerList[j].betList = []
             if config.playerList[j].isPlaying and config.playerList[j].inHand:
                 config.currPlayers.append(j)
 
         config.endPlayer = config.currPlayers[0]
+        config.maxBet = 0
 
+        # Update Round
         if (config.roundMode == "preflop"):
             config.roundMode = "flop"
 
@@ -1339,9 +1394,9 @@ class PokerGame(PygameGame):
             config.roundMode = "river"
 
         else:
-            self.endGame()
+            self.initializeGame()
 
-    def endGame(self):
+    '''def endGame(self):
         flag = False
 
         # Update Small Blind
@@ -1357,12 +1412,41 @@ class PokerGame(PygameGame):
                 config.smallBlind = config.playerList[j].num
                 flag = True 
 
+        # Update Bets
+        for player in config.playerList:
+            player.betList = []
+        
+        config.playerList[config.currPlayers[0]].betList.append(config.BBVal//2) # SB
+        config.playerList[config.currPlayers[0]].stackSize -= config.BBVal//2
+
+        config.playerList[config.currPlayers[1]].betList.append(config.BBVal) # BB
+        config.playerList[config.currPlayers[1]].stackSize -= config.BBVal
+
+        config.potSize += (config.BBVal + config.BBVal//2)
+        config.maxBet = config.BBVal
+
         # Everybody Back in Hand
         for player in config.playerList:
             if player.isPlaying:
                 player.inHand = True
             else:
-                player.inHand = False
+                player.inHand = False'''
+
+    def updateBetList(self, currP, bet):
+        config.playerList[currP].betList.append(bet)
+
+        # First Bet
+        if len(config.playerList[currP].betList) == 1:
+            config.potSize += bet
+            config.playerList[currP].stackSize -= bet
+
+        # Already Made a Bet
+        else:
+            diff = bet - config.playerList[currP].betList[-2]
+            config.potSize += diff 
+            config.playerList[currP].stackSize -= diff
+
+
 
 
     
