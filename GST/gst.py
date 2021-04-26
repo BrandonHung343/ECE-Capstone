@@ -8,6 +8,7 @@ import config
 dealerGame = dealerUI.PokerGame()
 dealerGame.run()
 
+
 '''[1, 2, 3, 4, 5, 7]
 smallBlind = 4
 # Call at beginning of each game
