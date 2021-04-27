@@ -467,41 +467,57 @@ class PokerGame(PygameGame):
         # Players 
         if self.player1InputActive: 
             pygame.draw.circle(screen, (100, 150, 100), self.player1Rect.center,self.width//20)
+        elif config.playerList[0].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player1Rect.center,self.width//20)
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
 
         if self.player2InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width//20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player2Rect.center, self.width//20)
+        elif config.playerList[1].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player2Rect.center,self.width//20) 
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
 
         if self.player3InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width//20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player3Rect.center, self.width//20)
+        elif config.playerList[2].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player3Rect.center,self.width//20) 
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
 
         if self.player4InputActive:
             pygame.draw.circle(screen, (100, 150, 100), self.player4Rect.center, self.width//20) 
+        elif config.playerList[3].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player4Rect.center,self.width//20)
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
         
         if self.player5InputActive:
-            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width//20) 
+            pygame.draw.circle(screen, (100, 150, 100), self.player5Rect.center, self.width//20)
+        elif config.playerList[4].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player5Rect.center,self.width//20) 
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
         
         if self.player6InputActive:
             pygame.draw.circle(screen, (100, 150, 100), self.player6Rect.center, self.width//20) 
+        elif config.playerList[5].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player6Rect.center,self.width//20)
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
         
         if self.player7InputActive:
             pygame.draw.circle(screen, (100, 150, 100), self.player7Rect.center, self.width//20) 
+        elif config.playerList[6].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player7Rect.center,self.width//20)
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
 
         if self.player8InputActive:
             pygame.draw.circle(screen, (100, 150, 100), self.player8Rect.center, self.width//20) 
+        elif config.playerList[7].isPlaying:
+            pygame.draw.circle(screen, (255, 0, 0), self.player8Rect.center,self.width//20)
         else:
             pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
         
