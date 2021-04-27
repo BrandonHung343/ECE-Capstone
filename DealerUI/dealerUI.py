@@ -884,7 +884,7 @@ class PokerGame(PygameGame):
             screen.blit(player8Name, player8NameBox)
             screen.blit(player8Stack, stack8Box)
 
-        # Player Dealer
+        # Small Blind Chip
         num = config.smallBlind
         if num == 0: screen.blit(self.smallChip, dealer1Rect)
         if num == 1: screen.blit(self.smallChip, dealer2Rect)
@@ -894,6 +894,21 @@ class PokerGame(PygameGame):
         if num == 5: screen.blit(self.smallChip, dealer6Rect)
         if num == 6: screen.blit(self.smallChip, dealer7Rect)
         if num == 7: screen.blit(self.smallChip, dealer8Rect)
+
+        # Big Blind Chip
+        if (len(config.currPlayers) >= 2):
+            index = config.currPlayers.index(num)
+            index2 = (index+1)%len(config.currPlayers)
+            bigBlind = config.currPlayers[index2]
+            if bigBlind == 0: screen.blit(self.bigChip, dealer1Rect)
+            if bigBlind == 1: screen.blit(self.bigChip, dealer2Rect)
+            if bigBlind == 2: screen.blit(self.bigChip, dealer3Rect)
+            if bigBlind == 3: screen.blit(self.bigChip, dealer4Rect)
+            if bigBlind == 4: screen.blit(self.bigChip, dealer5Rect)
+            if bigBlind == 5: screen.blit(self.bigChip, dealer6Rect)
+            if bigBlind == 6: screen.blit(self.bigChip, dealer7Rect)
+            if bigBlind == 7: screen.blit(self.bigChip, dealer8Rect)
+
 
     # Chip Config
     def chipConfigMousePressed(self, x, y):
@@ -1345,18 +1360,18 @@ class PokerGame(PygameGame):
 
         flag = False
         # Update Small Blind
-        for i in range(config.smallBlind, 8):
+        for i in range((config.smallBlind+1)%8, 8):
             if (flag): break         
-            if (config.playerList[i].isPlaying) and (i != smallBlind):
+            if (config.playerList[i].isPlaying):
                 config.smallBlind = config.playerList[i].num
                 flag = True
 
-        for j in range(0, config.smallBlind):
+        for j in range(0, (config.smallBlind+1)%8):
             if (flag): break
-            if (config.playerList[j].isPlaying) and (j != smallBlind):
+            if (config.playerList[j].isPlaying):
                 config.smallBlind = config.playerList[j].num
                 flag = True 
-                
+         
         # Initialize Curr Player List (Prelop)
         config.currPlayers = []
         for i in range(config.smallBlind, 8):
