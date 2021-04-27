@@ -155,20 +155,24 @@ class PokerGame(PygameGame):
         self.whiteRect = self.whiteChip.get_rect(center=(self.width//4,self.height//3))
         self.redRect = self.redChip.get_rect(center=(self.width//2,self.height//3))
         self.greenRect = self.greenChip.get_rect(center=(self.width*3//4,self.height//3))
-        self.blueRect = self.blueChip.get_rect(center=(self.width//3,self.height*2//3))
-        self.blackRect = self.blackChip.get_rect(center=(self.width*2//3,self.height*2//3))
+        self.blueRect = self.blueChip.get_rect(center=(self.width//4,self.height*2//3))
+        self.blackRect = self.blackChip.get_rect(center=(self.width//2,self.height*2//3))
+        self.BBRect = self.blackChip.get_rect(center=(self.width*3//4,self.height*2//3))
 
         self.whiteInputActive = False
         self.redInputActive = False
         self.greenInputActive = False
         self.blueInputActive = False
         self.blackInputActive = False
+        self.BBInputActive = False
 
         self.tempWhiteNum = ""
         self.tempRedNum = ""
         self.tempGreenNum = ""
         self.tempBlueNum = ""
         self.tempBlackNum = ""
+        self.tempBBNum = ""
+
         self.cvdat = CompVision.CVData(0, 2, 13.5, 120, config.chipValues)
 
         # Stack Sizes 
@@ -297,7 +301,7 @@ class PokerGame(PygameGame):
 
         # Chip Color
         pygame.draw.rect(screen, (25, 25, 170), self.chipColorButton)
-        chipColor = self.myFont.render("Chip Colors", True, (0,0,0))
+        chipColor = self.myFont.render("Chip Configuartion", True, (0,0,0))
         chipColorBox = chipColor.get_rect(center = self.chipColorButton.center)
         screen.blit(chipColor, chipColorBox)
 
@@ -891,13 +895,14 @@ class PokerGame(PygameGame):
         if num == 6: screen.blit(self.smallChip, dealer7Rect)
         if num == 7: screen.blit(self.smallChip, dealer8Rect)
 
-    # Chip Colors Config
+    # Chip Config
     def chipConfigMousePressed(self, x, y):
         self.whiteInputActive = False
         self.redInputActive = False
         self.greenInputActive = False
         self.blueInputActive = False
         self.blackInputActive = False
+        self.BBInputActive = False
 
         if self.backRect.collidepoint(x, y):
             config.gameMode = "config"
@@ -926,6 +931,10 @@ class PokerGame(PygameGame):
         elif self.blackRect.collidepoint(x, y):
             self.tempBlackNum = ""
             self.blackInputActive = True
+        
+        elif self.BBRect.collidepoint(x, y):
+            self.tempBBNum = ""
+            self.BBInputActive = True
 
     
     def chipConfigKeyPressed(self, code, mod):
@@ -943,6 +952,8 @@ class PokerGame(PygameGame):
                     self.tempBlueNum += number
                 if self.blackInputActive:
                     self.tempBlackNum += number
+                if self.BBInputActive:
+                    self.tempBBNum += number
                 
 
         # Enter/Return
@@ -972,6 +983,11 @@ class PokerGame(PygameGame):
                 config.chipValues[4] = int(self.tempBlackNum)
                 self.tempBlackNum = ""
 
+            elif self.BBInputActive:
+                self.BBInputActive = False
+                config.BBVal = int(self.tempBBNum)
+                self.tempBBNum = ""
+
            
     def chipConfigTimerFired(self,dt):
         pass   
@@ -997,6 +1013,7 @@ class PokerGame(PygameGame):
         pygame.draw.rect(screen, (115, 115, 115), self.greenRect)
         pygame.draw.rect(screen, (115, 115, 115), self.blueRect)
         pygame.draw.rect(screen, (115, 115, 115), self.blackRect)
+        pygame.draw.rect(screen, (115, 115, 115), self.BBRect)
 
         clickWords = self.titleFont.render("Click to Edit Chip Values", True, (0,0,0))
         clickBox = clickWords.get_rect(center = (self.width//2, self.height//8))
@@ -1007,18 +1024,21 @@ class PokerGame(PygameGame):
         greenNum = self.myFont.render(str(config.chipValues[2]), True, (0,0,175))
         blueNum = self.myFont.render(str(config.chipValues[3]), True, (0,0,175))
         blackNum = self.myFont.render(str(config.chipValues[4]), True, (0,0,175))
+        BBNum = self.myFont.render(str(config.BBVal), True, (0,0,175))
 
         tempWhite = self.myFont.render(self.tempWhiteNum, True, (0,0,175))
         tempRed = self.myFont.render(self.tempRedNum, True, (0,0,175))
         tempGreen = self.myFont.render(self.tempGreenNum, True, (0,0,175))
         tempBlue = self.myFont.render(self.tempBlueNum, True, (0,0,175))
         tempBlack = self.myFont.render(self.tempBlackNum, True, (0,0,175))
+        tempBB = self.myFont.render(self.tempBBNum, True, (0,0,175))
         
         whiteWords = self.myFont.render("Chip 1 Value:", True, (0,0,0))
         redWords = self.myFont.render("Chip 2 Value:", True, (0,0,0))
         greenWords = self.myFont.render("Chip 3 Value:", True, (0,0,0))
         blueWords = self.myFont.render("Chip 4 Value:", True, (0,0,0))
         blackWords = self.myFont.render("Chip 5 Value:", True, (0,0,0))
+        BBWords = self.myFont.render("Big Blind Value:", True, (0,0,0))
 
         whiteBox2 = whiteWords.get_rect(center = (self.whiteRect.x+self.whiteRect.w//2, self.whiteRect.y+self.whiteRect.h//4))
         whiteBox = whiteNum.get_rect(center = (self.whiteRect.x+self.whiteRect.w//2, self.whiteRect.y+self.whiteRect.h*3//4))
@@ -1030,14 +1050,15 @@ class PokerGame(PygameGame):
         blueBox = blueNum.get_rect(center = (self.blueRect.x+self.blueRect.w//2, self.blueRect.y+self.blueRect.h*3//4))
         blackBox2 = blackWords.get_rect(center = (self.blackRect.x+self.blackRect.w//2, self.blackRect.y+self.blackRect.h//4))
         blackBox = blackNum.get_rect(center = (self.blackRect.x+self.blackRect.w//2, self.blackRect.y+self.blackRect.h*3//4))
+        BBBox2 = BBWords.get_rect(center = (self.BBRect.x+self.BBRect.w//2, self.BBRect.y+self.BBRect.h//4))
+        BBBox = BBNum.get_rect(center = (self.BBRect.x+self.BBRect.w//2, self.BBRect.y+self.BBRect.h*3//4))
 
         screen.blit(whiteWords, whiteBox2)
         screen.blit(redWords, redBox2)
         screen.blit(greenWords, greenBox2)
         screen.blit(blueWords, blueBox2)
         screen.blit(blackWords, blackBox2)
-
-
+        screen.blit(BBWords, BBBox2)
 
         if self.whiteInputActive:
             screen.blit(tempWhite, whiteBox)
@@ -1063,6 +1084,11 @@ class PokerGame(PygameGame):
             screen.blit(tempBlack, blackBox)
         else:
             screen.blit(blackNum, blackBox)
+
+        if self.BBInputActive:
+            screen.blit(tempBB, BBBox)
+        else:
+            screen.blit(BBNum, BBBox)
 
     # Stack Sizes
     def stackSizesMousePressed(self, x, y):
