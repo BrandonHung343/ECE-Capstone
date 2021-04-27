@@ -94,6 +94,7 @@ class PokerGame(PygameGame):
         self.myFont = pygame.font.SysFont("Impact", self.width//40)
         self.smallFont = pygame.font.SysFont("Impact", self.width//80)
         self.titleFont = pygame.font.SysFont("Rubik", self.width//15)
+        self.winFont = pygame.font.SysFont("Rubik", self.width//20)
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
@@ -255,7 +256,6 @@ class PokerGame(PygameGame):
             if (numPlayers >= 3):
                 config.gameMode = "playGame"
                 self.initializeGame()
-                # Rotate Servo to config.playerList[0]
 
         elif self.addDelButton.collidepoint(x, y):
             config.gameMode = "addDel"
@@ -626,109 +626,157 @@ class PokerGame(PygameGame):
 
     # Play Game Screen Functions
     def playGameMousePressed(self, x ,y):
-        # End Game
-        if self.backRect.collidepoint(x, y): 
-            config.gameMode = "config"
-        
-        # Fold
-        if self.foldRect.collidepoint(x, y):
-            currP = config.currPlayers[0]
-            config.playerList[currP].inHand = False
-            config.currPlayers = config.currPlayers[1:]
+        # Regular Game
+        if not config.winState:  
+            # End Game Button
+            if self.backRect.collidepoint(x, y):
+                for player in config.playerList:
+                    if (len(player.betList) != 0):
+                        player.stackSize += player.betList[-1]
 
-            # If End of Game 
-            if (len(config.currPlayers) == 1):
-                self.initializeGame()
+                config.gameMode = "config"
 
-            # Not End of Game
-            else:
-                # Check End Round
+            # Fold
+            if self.foldRect.collidepoint(x, y):
+                currP = config.currPlayers[0]
+                config.playerList[currP].inHand = False
+                config.currPlayers = config.currPlayers[1:]
+
+                # End of Game 
+                if (len(config.currPlayers) == 1):
+                    config.playerList[config.currPlayers[0]].stackSize += config.potSize
+                    self.initializeGame()
+
+                # Not End of Game
+                else:
+                    # Check End Round
+                    if (config.currPlayers[0] == config.endPlayer):
+                        self.endRound()
+
+                    # If End Player Folds (Edge Case)
+                    if (currP == config.endPlayer):
+                        config.endPlayer = config.currPlayers[0]
+
+                    # Rotate Servo 
+                    self.rotateServo()
+
+
+            # Raise   
+            if self.raiseRect.collidepoint(x, y):
+                currP = config.currPlayers[0]
+
+                # Update Bets
+                bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
+                config.maxBet = bet
+                self.updateBetList(currP, bet)
+
+                # Update Order of Curr Players
+                tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                config.currPlayers = tmpList
+                config.endPlayer = currP
+
+                # Rotate Servo
+                self.rotateServo()
+
+            # Check
+            if self.checkRect.collidepoint(x, y): 
+                currP = config.currPlayers[0]
+                playerBetList = config.playerList[currP].betList
+
+                # Empty Bet List
+                if (len(playerBetList) == 0):
+                    if (config.maxBet == 0):
+                        tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                        config.currPlayers = tmpList
+
+                        if (config.currPlayers[0] == config.endPlayer):
+                            self.endRound()
+                # Not Empty Bet List
+                else: 
+                    if (playerBetList[-1] == config.maxBet):
+                        tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                        config.currPlayers = tmpList
+
+                        if (config.currPlayers[0] == config.endPlayer):
+                            self.endRound()
+
+                # Rotate Servo
+                self.rotateServo()
+
+            # Call    
+            if self.callRect.collidepoint(x, y):
+                currP = config.currPlayers[0]
+
+                # Update Bets
+                self.updateBetList(currP, config.maxBet)
+
+                # Update Order of Curr Players
+                tmpList = config.currPlayers[1:]+config.currPlayers[:1]
+                config.currPlayers = tmpList
+
                 if (config.currPlayers[0] == config.endPlayer):
                     self.endRound()
 
-                # If End Player Folds (Edge Case)
-                if (currP == config.endPlayer):
-                    config.endPlayer = config.currPlayers[0]
+                # Rotate Servo
+                self.rotateServo()
+        
+        # Win State
+        else:
+            if self.player1Rect.collidepoint(x, y) and config.playerList[0].inHand:
+                config.playerList[0].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-                # Rotate Servo config.currPlayers[0]
+            if self.player2Rect.collidepoint(x, y) and config.playerList[1].inHand:
+                config.playerList[1].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-        # Raise   
-        if self.raiseRect.collidepoint(x, y):
-            currP = config.currPlayers[0]
+            if self.player3Rect.collidepoint(x, y) and config.playerList[2].inHand:
+                config.playerList[2].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-            # Update Bets
-            bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
-            config.maxBet = bet
-            self.updateBetList(currP, bet)
+            if self.player4Rect.collidepoint(x, y) and config.playerList[3].inHand:
+                config.playerList[3].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-            # Update Order of Curr Players
-            tmpList = config.currPlayers[1:]+config.currPlayers[:1]
-            config.currPlayers = tmpList
-            config.endPlayer = currP
+            if self.player5Rect.collidepoint(x, y) and config.playerList[4].inHand:
+                config.playerList[4].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-        # Check
-        if self.checkRect.collidepoint(x, y): 
-            currP = config.currPlayers[0]
-            playerBetList = config.playerList[currP].betList
+            if self.player6Rect.collidepoint(x, y) and config.playerList[5].inHand:
+                config.playerList[5].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-            # Empty Bet List
-            if (len(playerBetList) == 0):
-                if (config.maxBet == 0):
-                    tmpList = config.currPlayers[1:]+config.currPlayers[:1]
-                    config.currPlayers = tmpList
+            if self.player7Rect.collidepoint(x, y) and config.playerList[6].inHand:
+                config.playerList[6].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-                    if (config.currPlayers[0] == config.endPlayer):
-                        self.endRound()
-            # Not Empty Bet List
-            else: 
-                if (playerBetList[-1] == config.maxBet):
-                    tmpList = config.currPlayers[1:]+config.currPlayers[:1]
-                    config.currPlayers = tmpList
+            if self.player8Rect.collidepoint(x, y) and config.playerList[7].inHand:
+                config.playerList[7].stackSize += config.potSize
+                config.winState = False
+                self.initializeGame()
 
-                    if (config.currPlayers[0] == config.endPlayer):
-                        self.endRound()
-
-        # Call    
-        if self.callRect.collidepoint(x, y):
-            currP = config.currPlayers[0]
-
-            # Update Bets
-            self.updateBetList(currP, config.maxBet)
-
-            # Update Order of Curr Players
-            tmpList = config.currPlayers[1:]+config.currPlayers[:1]
-            config.currPlayers = tmpList
-
-            if (config.currPlayers[0] == config.endPlayer):
-                self.endRound()
 
     def playGameKeyPressed(self, code, mod):
         pass
-        '''if  len(pygame.key.name(code)) == 1: 
-            if ord(pygame.key.name(code)) >= 48 and ord(pygame.key.name(code)) <= 57:
-                number = pygame.key.name(code)
-                config.currAction = "rotate"
-                string = "rotate"+number+"0"+"\n"
-                string_encode = string.encode()
-                self.ser.write(string_encode)
-            elif ord(pygame.key.name(code)) == 115:
-                CompVision.get_stack_value(self.cvdat, debug=True)'''
    
     def playGameTimerFired(self, dt):
-        while config.currAction == "rotate":
-            config.rotateTime += dt
-            if config.rotateTime >= 20000: # 20 seconds
-                config.currAction = ""
-                config.rotateTime = 0
+        pass
   
     def playGameRedrawAll(self, screen):
         screen.fill((120, 120, 120))
 
         # Actions 
-        pygame.draw.rect(screen, (170, 25, 25), self.foldRect)
-        pygame.draw.rect(screen, (25, 170, 25), self.raiseRect)
-        pygame.draw.rect(screen, (25, 25, 170), self.checkRect)
-        pygame.draw.rect(screen, (170, 170, 170), self.callRect)
+        if not config.winState: pygame.draw.rect(screen, (170, 25, 25), self.foldRect)
+        if not config.winState: pygame.draw.rect(screen, (25, 170, 25), self.raiseRect)
+        if not config.winState: pygame.draw.rect(screen, (25, 25, 170), self.checkRect)
+        if not config.winState: pygame.draw.rect(screen, (170, 170, 170), self.callRect)
         foldWords = self.smallFont.render("Fold", True, (0,0,0))
         raiseWords = self.smallFont.render("Raise", True, (0,0,0))
         checkWords = self.smallFont.render("Check", True, (0,0,0))
@@ -737,16 +785,16 @@ class PokerGame(PygameGame):
         raiseBox = raiseWords.get_rect(center = self.raiseRect.center)
         checkBox = checkWords.get_rect(center = self.checkRect.center)
         callBox = callWords.get_rect(center = self.callRect.center)
-        screen.blit(foldWords, foldBox)
-        screen.blit(raiseWords, raiseBox)
-        screen.blit(checkWords, checkBox)
-        screen.blit(callWords, callBox)
+        if not config.winState: screen.blit(foldWords, foldBox)
+        if not config.winState: screen.blit(raiseWords, raiseBox)
+        if not config.winState: screen.blit(checkWords, checkBox)
+        if not config.winState: screen.blit(callWords, callBox)
 
         # Back
-        pygame.draw.rect(screen, (255, 0, 0), self.backRect)
+        if not config.winState: pygame.draw.rect(screen, (255, 0, 0), self.backRect)
         backWords = self.myFont.render("End Game", True, (0,0,0))
         backBox = backWords.get_rect(center = self.backRect.center)
-        screen.blit(backWords, backBox)
+        if not config.winState: screen.blit(backWords, backBox)
 
         # Rotate Button
         '''pygame.draw.rect(screen, (75, 50, 150), self.rotateButton)
@@ -757,7 +805,12 @@ class PokerGame(PygameGame):
         # Table
         pygame.draw.ellipse(screen, (25, 100, 25), self.pokerTable)
 
-        # Pot
+        # Round
+        gameWords = self.myFont.render(config.roundMode, True, (0,0,0))
+        gameBox = gameWords.get_rect(center = (self.width//2, self.height//2-(4*self.height//25)))
+        if not config.winState: screen.blit(gameWords, gameBox)
+        
+        '''# Debug
         debugStuff = ""
         for x in config.currPlayers:
             debugStuff+=str(x)
@@ -768,7 +821,24 @@ class PokerGame(PygameGame):
         potSizeString = "$%d" % config.potSize
         potSize = self.myFont.render(potSizeString, True, (0,0,0))
         potSizeBox = potSize.get_rect(center = (self.width//2, self.height//2+self.height//25))
+        screen.blit(potSize, potSizeBox)'''
+
+        # Pot
+        potWords = "Pot"
+        thePot = self.myFont.render(potWords, True, (0,0,0))
+        thePotBox = thePot.get_rect(center = (self.width//2, self.height//2-self.height//25))
+        screen.blit(thePot, thePotBox)
+
+        potSizeString = "$%d" % config.potSize
+        potSize = self.myFont.render(potSizeString, True, (0,0,0))
+        potSizeBox = potSize.get_rect(center = (self.width//2, self.height//2+self.height//25))
         screen.blit(potSize, potSizeBox)
+
+        # Win State
+        winWords = "Round Over! Select Winner"
+        theWin = self.winFont.render(winWords, True, (0, 150, 250))
+        theWinBox = theWin.get_rect(center = (self.width//2, self.height//2-(4*self.height//25)))
+        if config.winState: screen.blit(theWin, theWinBox)
         
         # Dealer 
         dealerRect = self.bigDealerChip.get_rect(center=(self.width//2,self.height//10))
@@ -901,29 +971,24 @@ class PokerGame(PygameGame):
             screen.blit(player8Stack, stack8Box)
 
         # Small Blind Chip
-        num = config.smallBlind
-        if num == 0: screen.blit(self.smallChip, dealer1Rect)
-        if num == 1: screen.blit(self.smallChip, dealer2Rect)
-        if num == 2: screen.blit(self.smallChip, dealer3Rect)
-        if num == 3: screen.blit(self.smallChip, dealer4Rect)
-        if num == 4: screen.blit(self.smallChip, dealer5Rect)
-        if num == 5: screen.blit(self.smallChip, dealer6Rect)
-        if num == 6: screen.blit(self.smallChip, dealer7Rect)
-        if num == 7: screen.blit(self.smallChip, dealer8Rect)
+        if config.smallBlind == 0: screen.blit(self.smallChip, dealer1Rect)
+        if config.smallBlind == 1: screen.blit(self.smallChip, dealer2Rect)
+        if config.smallBlind == 2: screen.blit(self.smallChip, dealer3Rect)
+        if config.smallBlind == 3: screen.blit(self.smallChip, dealer4Rect)
+        if config.smallBlind == 4: screen.blit(self.smallChip, dealer5Rect)
+        if config.smallBlind == 5: screen.blit(self.smallChip, dealer6Rect)
+        if config.smallBlind == 6: screen.blit(self.smallChip, dealer7Rect)
+        if config.smallBlind == 7: screen.blit(self.smallChip, dealer8Rect)
 
-        # Big Blind Chip
-        if (len(config.currPlayers) >= 2):
-            index = config.currPlayers.index(num)
-            index2 = (index+1)%len(config.currPlayers)
-            bigBlind = config.currPlayers[index2]
-            if bigBlind == 0: screen.blit(self.bigChip, dealer1Rect)
-            if bigBlind == 1: screen.blit(self.bigChip, dealer2Rect)
-            if bigBlind == 2: screen.blit(self.bigChip, dealer3Rect)
-            if bigBlind == 3: screen.blit(self.bigChip, dealer4Rect)
-            if bigBlind == 4: screen.blit(self.bigChip, dealer5Rect)
-            if bigBlind == 5: screen.blit(self.bigChip, dealer6Rect)
-            if bigBlind == 6: screen.blit(self.bigChip, dealer7Rect)
-            if bigBlind == 7: screen.blit(self.bigChip, dealer8Rect)
+        # Big Blind Chip  
+        if config.bigBlind == 0: screen.blit(self.bigChip, dealer1Rect)
+        if config.bigBlind == 1: screen.blit(self.bigChip, dealer2Rect)
+        if config.bigBlind == 2: screen.blit(self.bigChip, dealer3Rect)
+        if config.bigBlind == 3: screen.blit(self.bigChip, dealer4Rect)
+        if config.bigBlind == 4: screen.blit(self.bigChip, dealer5Rect)
+        if config.bigBlind == 5: screen.blit(self.bigChip, dealer6Rect)
+        if config.bigBlind == 6: screen.blit(self.bigChip, dealer7Rect)
+        if config.bigBlind == 7: screen.blit(self.bigChip, dealer8Rect)
 
 
     # Chip Config
@@ -1039,12 +1104,24 @@ class PokerGame(PygameGame):
         screen.blit(calibrateWords, calibrateBox)
 
         # Edit
-        pygame.draw.rect(screen, (115, 115, 115), self.whiteRect)
-        pygame.draw.rect(screen, (115, 115, 115), self.redRect)
-        pygame.draw.rect(screen, (115, 115, 115), self.greenRect)
-        pygame.draw.rect(screen, (115, 115, 115), self.blueRect)
-        pygame.draw.rect(screen, (115, 115, 115), self.blackRect)
-        pygame.draw.rect(screen, (115, 115, 115), self.BBRect)
+        color1 = (115, 115, 115)
+        color2 = (115, 115, 115)
+        color3 = (115, 115, 115)
+        color4 = (115, 115, 115)
+        color5 = (115, 115, 115) 
+        color6 = (115, 115, 115)
+        if self.whiteInputActive: color1 = (100, 150, 100)
+        if self.redInputActive: color2 = (100, 150, 100)
+        if self.greenInputActive: color3 = (100, 150, 100)
+        if self.blueInputActive: color4 = (100, 150, 100)
+        if self.blackInputActive: color5 = (100, 150, 100)
+        if self.BBInputActive: color6 = (100, 150, 100)
+        pygame.draw.rect(screen, color1, self.whiteRect)
+        pygame.draw.rect(screen, color2, self.redRect)
+        pygame.draw.rect(screen, color3, self.greenRect)
+        pygame.draw.rect(screen, color4, self.blueRect)
+        pygame.draw.rect(screen, color5, self.blackRect)
+        pygame.draw.rect(screen, color6, self.BBRect)
 
         clickWords = self.titleFont.render("Click to Edit Chip Values", True, (0,0,0))
         clickBox = clickWords.get_rect(center = (self.width//2, self.height//8))
@@ -1193,42 +1270,42 @@ class PokerGame(PygameGame):
         elif code == pygame.K_RETURN:
             if self.stack1InputActive:
                 self.stack1InputActive = False
-                config.playerList[0].stackSize = int(self.tempStack1)
+                if (self.tempStack1 != ""): config.playerList[0].stackSize = int(self.tempStack1)
                 self.tempStack1 = ""
 
             elif self.stack2InputActive:
                 self.stack2InputActive = False
-                config.playerList[1].stackSize = int(self.tempStack2)
+                if (self.tempStack2 != ""): config.playerList[1].stackSize = int(self.tempStack2)
                 self.tempStack2 = ""
 
             elif self.stack3InputActive:
                 self.stack3InputActive = False
-                config.playerList[2].stackSize = int(self.tempStack3)
+                if (self.tempStack3 != ""): config.playerList[2].stackSize = int(self.tempStack3)
                 self.tempStack3 = ""
 
             elif self.stack4InputActive:
                 self.stack4InputActive = False
-                config.playerList[3].stackSize = int(self.tempStack4)
+                if (self.tempStack4 != ""): config.playerList[3].stackSize = int(self.tempStack4)
                 self.tempStack4 = ""
 
             elif self.stack5InputActive:
                 self.stack5InputActive = False
-                config.playerList[4].stackSize = int(self.tempStack5)
+                if (self.tempStack5 != ""): config.playerList[4].stackSize = int(self.tempStack5)
                 self.tempStack5 = ""
 
             elif self.stack6InputActive:
                 self.stack6InputActive = False
-                config.playerList[5].stackSize = int(self.tempStack6)
+                if (self.tempStack6 != ""): config.playerList[5].stackSize = int(self.tempStack6)
                 self.tempStack6 = ""
 
             elif self.stack7InputActive:
                 self.stack7InputActive = False
-                config.playerList[6].stackSize = int(self.tempStack7)
+                if (self.tempStack7 != ""): config.playerList[6].stackSize = int(self.tempStack7)
                 self.tempStack7 = ""
             
             elif self.stack8InputActive:
                 self.stack8InputActive = False
-                config.playerList[7].stackSize = int(self.tempStack8)
+                if (self.tempStack8 != ""): config.playerList[7].stackSize = int(self.tempStack8)
                 self.tempStack8 = ""
 
     def stackSizesTimerFired(self,dt):
@@ -1297,17 +1374,10 @@ class PokerGame(PygameGame):
         player7NameBox = player7Name.get_rect(center = (self.player7Rect.x+self.player7Rect.w//2, self.player7Rect.y+self.player7Rect.h//4))
         player8NameBox = player8Name.get_rect(center = (self.player8Rect.x+self.player8Rect.w//2, self.player8Rect.y+self.player8Rect.h//4))
 
-        '''player1NameBox = player1Name.get_rect(center = self.player1Rect.center)
-        player2NameBox = player2Name.get_rect(center = self.player2Rect.center)
-        player3NameBox = player3Name.get_rect(center = self.player3Rect.center)
-        player4NameBox = player4Name.get_rect(center = self.player4Rect.center)
-        player5NameBox = player5Name.get_rect(center = self.player5Rect.center)
-        player6NameBox = player6Name.get_rect(center = self.player6Rect.center)
-        player7NameBox = player7Name.get_rect(center = self.player7Rect.center)
-        player8NameBox = player8Name.get_rect(center = self.player8Rect.center)'''
-
         if config.playerList[0].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player1Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack1InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player1Rect.center, self.width//20)
             screen.blit(player1Name, player1NameBox)
             if (self.stack1InputActive):
                 screen.blit(temp1Stack, stack1Box)
@@ -1315,7 +1385,9 @@ class PokerGame(PygameGame):
                 screen.blit(player1Stack, stack1Box)
 
         if config.playerList[1].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player2Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack2InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player2Rect.center, self.width//20)
             screen.blit(player2Name, player2NameBox)
             if (self.stack2InputActive):
                 screen.blit(temp2Stack, stack2Box)
@@ -1323,7 +1395,9 @@ class PokerGame(PygameGame):
                 screen.blit(player2Stack, stack2Box)
 
         if config.playerList[2].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player3Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack3InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player3Rect.center, self.width//20)
             screen.blit(player3Name, player3NameBox)
             if (self.stack3InputActive):
                 screen.blit(temp3Stack, stack3Box)
@@ -1331,7 +1405,9 @@ class PokerGame(PygameGame):
                 screen.blit(player3Stack, stack3Box)
             
         if config.playerList[3].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player4Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack4InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player4Rect.center, self.width//20)
             screen.blit(player4Name, player4NameBox)
             if (self.stack4InputActive):
                 screen.blit(temp4Stack, stack4Box)
@@ -1339,7 +1415,9 @@ class PokerGame(PygameGame):
                 screen.blit(player4Stack, stack4Box)
             
         if config.playerList[4].isPlaying: 
-            pygame.draw.circle(screen, (75, 75, 75), self.player5Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack5InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player5Rect.center, self.width//20)
             screen.blit(player5Name, player5NameBox)
             if (self.stack5InputActive):
                 screen.blit(temp5Stack, stack5Box)
@@ -1347,15 +1425,19 @@ class PokerGame(PygameGame):
                 screen.blit(player5Stack, stack5Box)
             
         if config.playerList[5].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player6Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack6InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player6Rect.center, self.width//20)
             screen.blit(player6Name, player6NameBox)
             if (self.stack6InputActive):
                 screen.blit(temp6Stack, stack6Box)
             else:
                 screen.blit(player6Stack, stack6Box)
         
-        if config.playerList[6].isPlaying:           
-            pygame.draw.circle(screen, (75, 75, 75), self.player7Rect.center, self.width//20)
+        if config.playerList[6].isPlaying:  
+            color = (75, 75, 75)
+            if (self.stack7InputActive): color = (100, 150, 100)         
+            pygame.draw.circle(screen, color, self.player7Rect.center, self.width//20)
             screen.blit(player7Name, player7NameBox)
             if (self.stack7InputActive):
                 screen.blit(temp7Stack, stack7Box)
@@ -1363,7 +1445,9 @@ class PokerGame(PygameGame):
                 screen.blit(player7Stack, stack7Box)
         
         if config.playerList[7].isPlaying:
-            pygame.draw.circle(screen, (75, 75, 75), self.player8Rect.center, self.width//20)
+            color = (75, 75, 75)
+            if (self.stack8InputActive): color = (100, 150, 100)
+            pygame.draw.circle(screen, color, self.player8Rect.center, self.width//20)
             screen.blit(player8Name, player8NameBox)
             if (self.stack8InputActive):
                 screen.blit(temp8Stack, stack8Box)
@@ -1372,7 +1456,7 @@ class PokerGame(PygameGame):
 
     # After Play Game is Pressed
     def initializeGame(self):
-        config.roundMode = "preflop"
+        config.roundMode = "Preflop"
 
         flag = False
         # Update Small Blind
@@ -1386,7 +1470,21 @@ class PokerGame(PygameGame):
             if (flag): break
             if (config.playerList[j].isPlaying):
                 config.smallBlind = config.playerList[j].num
-                flag = True 
+                flag = True
+
+        # Update Big BLind
+        flag2 = False
+        for k in range((config.smallBlind+1)%8, 8):
+            if (flag2): break         
+            if (config.playerList[k].isPlaying):
+                config.bigBlind = config.playerList[k].num
+                flag2 = True
+
+        for l in range(0, (config.smallBlind+1)%8):
+            if (flag2): break
+            if (config.playerList[l].isPlaying):
+                config.bigBlind = config.playerList[l].num
+                flag2 = True
          
         # Initialize Curr Player List (Prelop)
         config.currPlayers = []
@@ -1423,6 +1521,9 @@ class PokerGame(PygameGame):
 
         config.endPlayer = config.currPlayers[0]
 
+        # Rotate Servo
+        self.rotateServo()
+
     def endRound(self):
         # Reset Bet Lists and Update Player Order
         config.currPlayers = []
@@ -1441,53 +1542,17 @@ class PokerGame(PygameGame):
         config.maxBet = 0
 
         # Update Round
-        if (config.roundMode == "preflop"):
-            config.roundMode = "flop"
+        if (config.roundMode == "Preflop"):
+            config.roundMode = "Flop"
 
-        elif (config.roundMode == "flop"):
-            config.roundMode = "turn"
+        elif (config.roundMode == "Flop"):
+            config.roundMode = "Turn"
 
-        elif (config.roundMode == "turn"):
-            config.roundMode = "river"
+        elif (config.roundMode == "Turn"):
+            config.roundMode = "River"
 
-        else:
-            self.initializeGame()
-
-    '''def endGame(self):
-        flag = False
-
-        # Update Small Blind
-        for i in range(config.smallBlind, 8):
-            if (flag): break         
-            if (config.playerList[i].isPlaying) and (i != smallBlind):
-                config.smallBlind = config.playerList[i].num
-                flag = True
-
-        for j in range(0, config.smallBlind):
-            if (flag): break
-            if (config.playerList[j].jsPlaying) and (j != smallBlind):
-                config.smallBlind = config.playerList[j].num
-                flag = True 
-
-        # Update Bets
-        for player in config.playerList:
-            player.betList = []
-        
-        config.playerList[config.currPlayers[0]].betList.append(config.BBVal//2) # SB
-        config.playerList[config.currPlayers[0]].stackSize -= config.BBVal//2
-
-        config.playerList[config.currPlayers[1]].betList.append(config.BBVal) # BB
-        config.playerList[config.currPlayers[1]].stackSize -= config.BBVal
-
-        config.potSize += (config.BBVal + config.BBVal//2)
-        config.maxBet = config.BBVal
-
-        # Everybody Back in Hand
-        for player in config.playerList:
-            if player.isPlaying:
-                player.inHand = True
-            else:
-                player.inHand = False'''
+        else: 
+            config.winState = True
 
     def updateBetList(self, currP, bet):
         config.playerList[currP].betList.append(bet)
@@ -1502,6 +1567,18 @@ class PokerGame(PygameGame):
             diff = bet - config.playerList[currP].betList[-2]
             config.potSize += diff 
             config.playerList[currP].stackSize -= diff
+
+    def rotateServo(self): 
+        num = config.currPlayers[0]
+        degrees = config.playerList[num].degrees
+        print(degrees)
+        '''string = str(degrees)
+        string_encode = string.encode()
+        self.ser.write(string_encode)'''
+
+        '''
+        elif ord(pygame.key.name(code)) == 115:
+            CompVision.get_stack_value(self.cvdat, debug=True)'''
 
 
 
