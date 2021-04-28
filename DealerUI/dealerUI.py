@@ -329,7 +329,7 @@ class PokerGame(PygameGame):
             config.playerList[0].name = ""
             if config.playerList[0].isPlaying:
                 config.playerList[0].isPlaying = False
-                config.playerList[0].stackSize = 50
+                config.playerList[0].stackSize = 200
             else:
                 self.player1InputActive = True
         
@@ -337,7 +337,7 @@ class PokerGame(PygameGame):
             config.playerList[1].name = ""
             if config.playerList[1].isPlaying:
                 config.playerList[1].isPlaying = False
-                config.playerList[1].stackSize = 50
+                config.playerList[1].stackSize = 200
             else:
                 self.player2InputActive = True
         
@@ -345,7 +345,7 @@ class PokerGame(PygameGame):
             config.playerList[2].name = ""
             if config.playerList[2].isPlaying:
                 config.playerList[2].isPlaying = False
-                config.playerList[2].stackSize = 50
+                config.playerList[2].stackSize = 200
             else:
                 self.player3InputActive = True
         
@@ -353,7 +353,7 @@ class PokerGame(PygameGame):
             config.playerList[3].name = ""
             if config.playerList[3].isPlaying:
                 config.playerList[3].isPlaying = False
-                config.playerList[3].stackSize = 50
+                config.playerList[3].stackSize = 200
             else:
                 self.player4InputActive = True
         
@@ -361,7 +361,7 @@ class PokerGame(PygameGame):
             config.playerList[4].name = ""
             if config.playerList[4].isPlaying:
                 config.playerList[4].isPlaying = False
-                config.playerList[4].stackSize = 50
+                config.playerList[4].stackSize = 200
             else:
                 self.player5InputActive = True
 
@@ -369,7 +369,7 @@ class PokerGame(PygameGame):
             config.playerList[5].name = ""
             if config.playerList[5].isPlaying:
                 config.playerList[5].isPlaying = False
-                config.playerList[5].stackSize = 50
+                config.playerList[5].stackSize = 200
             else:
                 self.player6InputActive = True
 
@@ -377,7 +377,7 @@ class PokerGame(PygameGame):
             config.playerList[6].name = ""
             if config.playerList[6].isPlaying:
                 config.playerList[6].isPlaying = False
-                config.playerList[6].stackSize = 50
+                config.playerList[6].stackSize = 200
             else:
                 self.player7InputActive = True
 
@@ -385,7 +385,7 @@ class PokerGame(PygameGame):
             config.playerList[7].name = ""
             if config.playerList[7].isPlaying:
                 config.playerList[7].isPlaying = False
-                config.playerList[7].stackSize = 50
+                config.playerList[7].stackSize = 200
             else:
                 self.player8InputActive = True
 
