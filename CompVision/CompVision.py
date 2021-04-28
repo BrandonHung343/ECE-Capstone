@@ -3,6 +3,7 @@ import cv2
 import time
 import colorsys
 import matplotlib.pyplot as plt
+import copy
 
 class CVData():
     def __init__(self, cam, numDomColors, chipHeight, chipWidth, values):
@@ -26,6 +27,7 @@ class CVData():
         self.values = values
         self.prog = 0
         self.cap = cv2.VideoCapture(cam)
+        self.window = 1/2
         # Note: size of lb, ub is 3, numDomColors of chip, numValues of chip,
 
     def print_info(self):
@@ -43,7 +45,6 @@ def color_calib(event, x, y, flags, params):
     ub = np.zeros((3, dat.domColors))
     lb = np.zeros((3, dat.domColors))
     
-
     if event == cv2.EVENT_LBUTTONDOWN:
         print("RGB: ", cal_frame[y, x, :])
 
@@ -63,6 +64,23 @@ def color_calib(event, x, y, flags, params):
             dat.lb[:, :, prog] = lb
             dat.ub[:, :, prog] = ub
             dat.recList = []
+
+
+
+def coord_get(event, x, y, flags, params):
+    cal_frame = params[0]
+    dat = params[1]
+    d1 = dat.d1
+    d2 = dat.d2
+    d3 = dat.d3
+    prog = dat.prog
+    ub = np.zeros((3, dat.domColors))
+    lb = np.zeros((3, dat.domColors))
+    
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print("x, y", y, x)
+
 
 
 def average_over_frame(event, x, y, flags, params):
@@ -119,7 +137,7 @@ def average_over_frame(event, x, y, flags, params):
         dat.lb[:, :, prog] = lb
         dat.ub[:, :, prog] = ub
         dat.recList = []
-        # dat.print_info()
+        
 
 
 def get_color_averages(frame):
@@ -162,6 +180,7 @@ def get_color_dominant(frame):
     return hsv # np.array(rgb) * 255
 
 
+
 def clean_morphological(dat, frame):
     im = frame
     # .MORPH_DILATE, (dat.cK, dat.cK))
@@ -170,10 +189,9 @@ def clean_morphological(dat, frame):
     # im = cv2.erode(im, (dat.eK, dat.eK), 1)
     im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
     im = cv2.dilate(im, (dat.cK, dat.cK))
-
-
     # im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, (dat.oK, dat.oK))
     return im
+
 
 
 def calibrate(dat):
@@ -213,6 +231,7 @@ def calibrate(dat):
     return dat
 
 
+
 def color_mask(dat, frame, chip):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(frame, dat.lb[:, 0, chip], dat.ub[:, 0, chip])
@@ -222,6 +241,7 @@ def color_mask(dat, frame, chip):
         mask = cv2.bitwise_or(mask, tempMask)
 
     return cv2.bitwise_and(frame, frame, mask=mask)
+
 
 
 def get_stack_value(dat, debug=False):
@@ -334,29 +354,223 @@ def test_image(file, dat):
 
 
 
-def white_balance(frame, window_name):
-    rScale = np.mean(frame[:, :, 1]) / np.mean(frame[:, :, 0])
-    bScale = np.mean(frame[:, :, 1]) / np.mean(frame[:, :, 2])
-    frame = np.dstack((np.round(frame[:, :, 0] * rScale), frame[:, :, 1], np.round(frame[:, :, 2] * bScale)))
-    print(type(frame))
-    return frame
+def get_contours(frame, dat):
+    contours, hierarchy = cv2.findContours(frame, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE)
+
+    # cv2.setMouseCallback("calibrate", coord_get, [cut_frame, dat]);
+    cntRects = []
+    idNum = 0
+    for cnt in contours:
+        # cnt = max(contours, key=cv2.contourArea)
+        x,y,w,h = cv2.boundingRect(cnt)
+        approxCenter = np.array([x+w/2, y+h/2])
+        cntRects.append([idNum, x, y, w, h, approxCenter])
+        idNum += 1
+
+
+    return assign_checkers(dat, cntRects)
+
+
+
+def get_cnt_rects(checkersGroups, cut_frame, colors, rectList, draw=False):
+    rectBottoms = []
+    i = 0
+
+    for group in checkersGroups:
+        color = colors[i]
+        for item in group:
+            x = item[1]
+            y = item[2]
+            w = item[3]
+            h = item[4]
+
+            if draw:
+                cut_frame = cv2.rectangle(cut_frame,(x,y),(x+w,y+h),color,1)
+
+        bigX = rectList[i][0]
+        bigW = rectList[i][1]
+        bigY = rectList[i][2]
+        bigH = rectList[i][3]
+
+        if draw:
+            cut_frame = cv2.rectangle(cut_frame,(bigX, bigY), (bigW, bigH), color, 1)
+        i += 1
+        
+    for i in range(len(rectList)):
+        bigX = rectList[i][0]
+        # print(bigX)
+        bigW = rectList[i][1]
+        bigH = rectList[i][3]
+        rectBottoms.append(((bigX+bigW)/2, bigH))
+
+    return cut_frame, rectBottoms
+
+
+
+def bin_thresh(frame, binThresh, dat):
+    grey_mask = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    # grey_mask = grey_mask[r1:r2, :]
+    grey_mask[grey_mask > binThresh] = 255
+    grey_mask[grey_mask <= binThresh] = 0
+    # grey_mask = clean_morphological(dat, grey_mask)
+    grey_mask = cv2.morphologyEx(grey_mask, cv2.MORPH_OPEN, (dat.oK, dat.oK))
+    return grey_mask
+
+
+
+def test_white(file, dat):
+    cv2.namedWindow("calibrate")
+    cal_frame = cv2.imread(file)
+
+    binThresh = 245
+    sizes = cal_frame.shape
+    r1 = int(np.rint(sizes[0] * 1/3))
+    r2 = int(np.rint(sizes[0] * 2/3))
+    cut_frame = cal_frame[r1:r2, :]
+
+    grey_mask = bin_thresh(cut_frame, binThresh, dat)
+    checkersGroups = get_contours(grey_mask, dat)
+
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]
+    rectList = minimum_bounding_rectangle(checkersGroups)
+    cut_frame, rectBottoms = get_cnt_rects(checkersGroups, cut_frame, colors, rectList, draw=False)
+    xs = least_squares(rectBottoms, dof=2)
+    # print("results", xs)
+    m = xs[0][0]
+    c = xs[0][1]
+    # print(m)
+
+    cv2.imshow("calibrate", cut_frame)
+    cv2.waitKey(0)
+
+    size = cut_frame.shape
+    rows = size[0]
+    cols = size[1]
+
+    # cut_frame = cv2.line(cut_frame, (int(c), 0), (int(m*cols+c), cols), (255, 255, 255), 1)
+    lineDist = np.sqrt((cols)**2 + int((m*cols)**2))
+    theta = -(np.pi/2 - np.arccos(cols/lineDist))
+    print("RotAng", theta)
+    R = cv2.getRotationMatrix2D((cols/2, rows/2), theta*180/np.pi, 1)
+    rotated = cv2.warpAffine(cut_frame, R, (cols, rows))
+    cv2.imshow("calibrate", rotated)
+    cv2.waitKey(0)
+
+    rot_grey = bin_thresh(rotated, binThresh, dat)
+    checkersGroups = get_contours(rot_grey, dat)
+    rectList = minimum_bounding_rectangle(checkersGroups)
+    rotated, rectBottoms = get_cnt_rects(checkersGroups, rotated, colors, rectList, draw=True)
+    cv2.imshow("calibrate", rotated)
+    cv2.waitKey(0)
+
+    totVal = stack_values(dat, None, rectList)
+    print(totVal)
+
+    return
+
+
+
+def assign_checkers(dat, checkers):
+    wiggleRoom = 3/4
+    searchX = wiggleRoom * dat.chipWidth
+    areaBound = (dat.chipHeight * dat.chipWidth) / 15
+    # print(searchY)
+    checkersGroup = [[] for d in dat.values]
+    # groupList = []
+    nextNonempty = 1
+    first = True
+    print(areaBound)
+    updated_checkers = copy.deepcopy(checkers)
+    while len(updated_checkers) > 0:
+        mySquare = updated_checkers.pop(0)
+        myX = mySquare[5][0]
+        myY = mySquare[5][1]
+        found = False
+        checkArea = (mySquare[3]) * (mySquare[4])
+        if checkArea <= areaBound:
+            print(myX, myY)
+            continue
+
+        if first:
+            removed_inds = [0]
+            checkersGroup[0].append(updated_checkers.pop(0))
+            first = False
+            continue
+
+        for group in checkersGroup:
+            for box in group:
+                cmpX = box[5][0]
+                cmpY = box[5][1]
+               
+                if np.abs(myX - cmpX) <= searchX: #  and np.abs(myY - cmpY) <= searchY
+                    found = True
+                    group.append(mySquare)
+                    break
+
+            if found:
+                #group.append(mySquare)
+                break
+
+        if not found:
+            checkersGroup[nextNonempty].append(mySquare)
+            nextNonempty += 1
+            if nextNonempty >= len(checkersGroup):
+                print("oopsie")
+                nextNonempty -= 1
+    return checkersGroup
+
+
+
+def minimum_bounding_rectangle(checkersGroups):
+    rectList = []
+    i = 0
+    for group in checkersGroups:
+        xMin = min(group, key=lambda x: x[1])
+        yMin = min(group, key=lambda x: x[2])
+        xMax = max(group, key=lambda x: x[1] + x[3])
+        yMax = max(group, key=lambda x: x[2] + x[4])
+
+        rectInfo = (xMin[1], xMax[1]+xMax[3], yMin[2], yMax[2]+yMax[4])
+        rectList.append(rectInfo)
+    return rectList
+
+
+
+def least_squares(pts, dof=2):
+    rows = len(pts)
+    A = np.ones((rows, dof))
+    b = np.zeros(rows)
+    for i in range(rows):
+        b[i] = pts[i][0]
+        if dof == 1:
+            A[i] = pts[i][1]
+        else:
+            for j in range(dof-1):
+                A[i, j] = pts[i][1]
+    print(A)
+    print(b)
+    return np.linalg.lstsq(A, b, rcond=None)
+
+
+
+def stack_values(dat, colors, rectList):
+    # find the color values
+    totVal = 0
+    for i in range(len(dat.values)):
+        height = rectList[i][3] - rectList[i][2]
+        value = dat.values[i] * np.round(height / dat.chipHeight)
+        totVal += value
+    return totVal
+
+
 
 def edge_detection(frame):
     frame = cv2.GaussianBlur(frame, (3, 3), 0)
-    
-    
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-    
-    grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3, borderType=cv2.BORDER_DEFAULT)
-    # Gradient-Y
-    # grad_y = cv.Scharr(gray,ddepth,0,1)
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3, borderType=cv2.BORDER_DEFAULT)
-    
-    
-    abs_grad_x = cv2.convertScaleAbs(grad_x)
+
     abs_grad_y = cv2.convertScaleAbs(grad_y)
-    grad = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+    grad = abs_grad_y # cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
     return grad
 
 
@@ -382,19 +596,19 @@ def test_stereo():
     plt.show()
 
 
-# def main():
-#     # dat = CVData(2, 4, 9, [50, 500, 5])
-#     # # dat.print_info()
-#     # dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
-#     # dat = calibrate(dat)
-#     # get_stack_value(dat, debug=True)
-#     # dat.print_info()
-#     # # test_stereo()
-#     dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
-#     test_image("setup.png", dat)
+def main():
+    # dat = CVData(2, 4, 9, [50, 500, 5])
+    # # dat.print_info()
+    # dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
+    # dat = calibrate(dat)
+    # get_stack_value(dat, debug=True)
+    # dat.print_info()
+    # # test_stereo()
+    dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
+    test_white("setup.png", dat)
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
 
