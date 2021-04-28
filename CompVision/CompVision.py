@@ -252,8 +252,8 @@ def get_stack_value(dat, debug=False):
     cal_frame = cv2.bilateralFilter(frame, dat.kSize, 75, 75)
 
     sizes = cal_frame.shape
-    r1 = int(np.rint(sizes[0] * 1/3))
-    r2 = int(np.rint(sizes[0] * 2/3))
+    r1 = int(np.rint(sizes[0] * 1/4))
+    r2 = int(np.rint(sizes[0] * 3/4))
     cut_frame = cal_frame[r1:r2, :, :]
 
     for i in range(len(dat.values)):
