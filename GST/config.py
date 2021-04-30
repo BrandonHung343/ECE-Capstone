@@ -6,7 +6,7 @@ class Player(object):
         self.name = ""
         self.isPlaying = False 
         self.inHand = False 
-        self.stackSize = 50
+        self.stackSize = 200
         self.betList = []
 
 playerList = [Player(0, 60), Player(1, 90), Player(2, 120), Player(3, 140), Player(4, 220), Player(5, 240), Player(6, 270), Player(7, 300)]
