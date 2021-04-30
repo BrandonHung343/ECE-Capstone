@@ -8,8 +8,7 @@ import copy
 class CVData():
     def __init__(self, cam, numDomColors, chipHeight, chipWidth, values):
         self.cam = cam
-        self.lb = np.zeros((3, numDomColors, len(values)))
-        self.ub = np.zeros((3, numDomColors, len(values)))
+        self.colorAssociation = {}
         self.d1 = 5
         self.d2 = 20
         self.d3 = 1
@@ -28,11 +27,16 @@ class CVData():
         self.prog = 0
         self.cap = cv2.VideoCapture(cam)
         self.window = 1/2
-        # Note: size of lb, ub is 3, numDomColors of chip, numValues of chip,
+        self.searchArea = False
+        self.searchWindow = None
+        self.tempColor = None
+        self.tempH = None
+        self.tempW = None
 
     def print_info(self):
         print("Lower bound:", self.lb)
         print("Upper bound:", self.ub)
+
 
 
 def color_calib(event, x, y, flags, params):
@@ -85,58 +89,55 @@ def coord_get(event, x, y, flags, params):
 
 def average_over_frame(event, x, y, flags, params):
     dat = params[1]
-    if event == cv2.EVENT_LBUTTONDOWN:
-        dat.recList.append((x, y))
-        # print(cal_frame[y,x])
-        
-    elif event == cv2.EVENT_LBUTTONUP:
-        cal_frame = params[0]
-        dat = params[1]
-        d1 = dat.d1
-        d2 = dat.d2
-        d3 = dat.d3
-        prog = dat.prog
-        ub = np.zeros((3, dat.domColors))
-        lb = np.zeros((3, dat.domColors))
-        print("RGB: ", cal_frame[y, x, :])
-
-        dat.recList.append((x, y))
-        # print(dat.recList)
-        
-        section = cal_frame[dat.recList[0][1]:dat.recList[1][1], dat.recList[0][0]:dat.recList[1][0]]
-        while True:
-            cv2.imshow("calibrate", section)
-            k = cv2.waitKey(1) & 0xFF
-            if k == 13:
-                break
-
-        avg_colors = get_color_dominant(section)
-        
-        for i in range(dat.domColors):
-            avg_color = avg_colors[i]
-            avg_color = np.reshape(avg_color[0], (1, 1, 3))
-            print(avg_color)
-            avg_color = cv2.cvtColor(avg_color, cv2.COLOR_BGR2HSV)
-            print(avg_color)
-            avg_color = np.reshape(avg_color, (3))
-            print(avg_color)
-
-            avg_color = np.array([avg_color[0] / 2, avg_color[1] * 255, avg_color[2]])
-            print(avg_color)
-
-            # for LAB
-            lb[:, i] = np.array([avg_color[0] - d1, avg_color[1] - d2, 0])
-            ub[:, i] = np.array([avg_color[0] + d1, avg_color[1] + d2, 255])
-
-            print(lb[:, i])
+    try:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            dat.recList.append((x, y))
+            # print(cal_frame[y,x])
             
-            for k in range(3):
-                lb[k, i] = max(lb[k, i], 0)
-                ub[k, i] = min(ub[k, i], 255)
-        
-        dat.lb[:, :, prog] = lb
-        dat.ub[:, :, prog] = ub
+        elif event == cv2.EVENT_LBUTTONUP:
+            cal_frame = params[0]
+            dat = params[1]
+            d1 = dat.d1
+            d2 = dat.d2
+            d3 = dat.d3
+            prog = dat.prog
+            searching = dat.searchArea
+
+            dat.recList.append((x, y))
+
+            x1 = dat.recList[0][1]
+            x2 = dat.recList[1][1]
+            y1 = dat.recList[0][0]
+            y2 = dat.recList[1][0]
+            section = cal_frame[x1:x2, y1:y2]
+
+            # If search area, all we want are the bounds
+            if searching:
+                dat.searchWindow = (x1, x2, y1, y2)
+                while True:
+                    cv2.imshow("calibrate", section)
+                    k = cv2.waitKey(1) & 0xFF
+                    if k == 13:
+                        break
+
+            # Otherwise, we are looking for color associations
+            else:
+                while True:
+                    cv2.imshow("calibrate", section)
+                    k = cv2.waitKey(1) & 0xFF
+                    if k == 13:
+                        break
+                # print(x1, x2, y1, y2)
+                dat.tempH = x2 - x1
+                dat.tempW = y2 - y1
+                dat.tempColor = get_color_dominant(section)
+                # dat.colorAssociation[dat.prog] = domColor[0]
+            dat.recList = []
+
+    except:
+        print("You may need to redo that one!")
         dat.recList = []
+
         
 
 
@@ -152,32 +153,13 @@ def get_color_averages(frame):
 def get_color_dominant(frame):
     tempFrame = np.float32(np.reshape(frame, (-1,3)))
     
-    # frameLen = tempFrame.shape[0] * tempFrame.shape[1] * tempFrame.shape[2]
-    # tempFrame = tempFrame.reshape(frameLen, 1)
-    nColors = 2
+    nColors = 1
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
     _, labels, centers = cv2.kmeans(tempFrame, nColors, None, criteria, 10, flags)
     _, counts = np.unique(labels, return_counts=True)
-    # print(counts)
-
-    # print(centers)
-    hsv = list(zip(centers, counts))
-    hsv.sort(key=lambda x: -x[1])
-    print(hsv)
-    # rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
-    # for h in hsv:
-    #     print(h)
-    #     tmp = np.reshape(h[0], (1, 1, 3))
-    #     tmp = cv2.cvtColor(tmp, cv2.COLOR_HSV2RGB)
-    #     tmp = np.reshape(tmp, (1, 3))
-    #     tmp = np.int32(tmp)
-    #     print(tmp)
-    #     tmp[0, 0] = tmp[0, 0] >> 16 & 0xFF
-    #     tmp[0, 1] = tmp[0, 1] >> 8 & 0xFF
-    #     tmp[0, 2] = tmp[0, 2] & 0xFF
-    #     print("RGB Conversion: ", tmp)
-    return hsv # np.array(rgb) * 255
+    
+    return centers # np.array(rgb) * 255
 
 
 
@@ -194,39 +176,55 @@ def clean_morphological(dat, frame):
 
 
 
-def calibrate(dat):
-    cam = dat.cam
-    cap = dat.cap
-    cv2.namedWindow("calibrate")
-    cap.open(cam)
-    ret, cal_frame = cap.read()
-
-    binThresh = 220
-    grey_mask = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2GRAY)
-    grey_mask[grey_mask > binThresh] = 0
-    grey_mask[grey_mask > 0] = 1
-    cal_frame = cv2.bitwise_and(cal_frame, cal_frame, mask=grey_mask)
-
-    cal_frame = cv2.morphologyEx(cal_frame, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
-    cal_frame = cv2.bilateralFilter(cal_frame, dat.kSize, 75, 75)
+def calibrate(dat, test=False, testIm=None):
+    if not test:
+        cam = dat.cam
+        cap = dat.cap
+        cap.open(cam)
+        ret, cal_frame = cap.read()
+    else:
+        cal_frame = testIm
 
     org = (13, 25)
-    color = (255, 255, 255)
+    txtColor = (255, 255, 255)
     font = cv2.FONT_HERSHEY_SIMPLEX
     debug = True
+    cv2.namedWindow("calibrate")
     cv2.setMouseCallback("calibrate", average_over_frame, [cal_frame, dat]);
 
     for i in range(len(dat.values)):
         dat.prog = i
         txt = 'Chip Value: ' + str(int(dat.values[dat.prog]))
         tmp = np.copy(cal_frame)
-        cv2.putText(tmp, txt, org, font, 1, color, 2)
+        cv2.putText(tmp, txt, org, font, 1, txtColor, 2)
         # cal_frame = white_balance(cal_frame)
         while True:
             cv2.imshow("calibrate", tmp)
             k = cv2.waitKey(1) & 0xFF
             if k == 13:
                 break
+
+        dat.chipHeight += dat.tempH
+        dat.chipWidth += dat.tempW
+        dat.colorAssociation[i] = dat.tempColor
+
+    dat.chipHeight = np.round(dat.chipHeight / len(dat.values))
+    dat.chipWidth = np.round(dat.chipWidth / len(dat.values))
+
+    print("Chip Width: %d, Chip Height: %d" % (dat.chipWidth, dat.chipHeight))
+    print("Colors", dat.colorAssociation)
+    # Set up the search area calibration
+    dat.searchArea = True
+    txt = "Expected Chip Area"
+    tmp = np.copy(cal_frame)
+    cv2.putText(tmp, txt, org, font, 1, txtColor, 2)
+    
+    while True:
+        cv2.imshow("calibrate", tmp)
+        k = cv2.waitKey(1) & 0xFF
+        if k == 13:
+            break
+
     cv2.destroyAllWindows()
     return dat
 
@@ -274,8 +272,6 @@ def get_stack_value(dat, debug=False):
             print(np.round(bigBox[1] / dat.chipHeight) * dat.values[i])
         else:
             print("no detection")
-
-        
 
     cv2.destroyAllWindows()
     return
@@ -422,16 +418,21 @@ def test_white(file, dat):
     cv2.namedWindow("calibrate")
     cal_frame = cv2.imread(file)
 
+    dat = calibrate(dat, test=True, testIm=cal_frame)
+
     binThresh = 245
     sizes = cal_frame.shape
-    r1 = int(np.rint(sizes[0] * 1/3))
-    r2 = int(np.rint(sizes[0] * 2/3))
-    cut_frame = cal_frame[r1:r2, :]
+
+    r1 = np.round(dat.searchWindow[0])
+    r2 = np.round(dat.searchWindow[1])
+    c1 = np.round(dat.searchWindow[2])
+    c2 = np.round(dat.searchWindow[3])
+    cut_frame = cal_frame[r1:r2, c1:c2]
 
     grey_mask = bin_thresh(cut_frame, binThresh, dat)
     checkersGroups = get_contours(grey_mask, dat)
 
-    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255), (255, 0, 255)]
     rectList = minimum_bounding_rectangle(checkersGroups)
     cut_frame, rectBottoms = get_cnt_rects(checkersGroups, cut_frame, colors, rectList, draw=False)
     xs = least_squares(rectBottoms, dof=2)
@@ -451,10 +452,16 @@ def test_white(file, dat):
     lineDist = np.sqrt((cols)**2 + int((m*cols)**2))
     theta = -(np.pi/2 - np.arccos(cols/lineDist))
     print("RotAng", theta)
+
+    if m > 0:
+        theta = -theta
+
     R = cv2.getRotationMatrix2D((cols/2, rows/2), theta*180/np.pi, 1)
     rotated = cv2.warpAffine(cut_frame, R, (cols, rows))
     cv2.imshow("calibrate", rotated)
     cv2.waitKey(0)
+
+    # print("m: ", m)
 
     rot_grey = bin_thresh(rotated, binThresh, dat)
     checkersGroups = get_contours(rot_grey, dat)
@@ -463,7 +470,7 @@ def test_white(file, dat):
     cv2.imshow("calibrate", rotated)
     cv2.waitKey(0)
 
-    totVal = stack_values(dat, None, rectList)
+    totVal = stack_values(dat, None, rectList, rotated, debug=True)
     print(totVal)
 
     return
@@ -479,7 +486,7 @@ def assign_checkers(dat, checkers):
     # groupList = []
     nextNonempty = 1
     first = True
-    print(areaBound)
+    # print(areaBound)
     updated_checkers = copy.deepcopy(checkers)
     while len(updated_checkers) > 0:
         mySquare = updated_checkers.pop(0)
@@ -488,7 +495,7 @@ def assign_checkers(dat, checkers):
         found = False
         checkArea = (mySquare[3]) * (mySquare[4])
         if checkArea <= areaBound:
-            print(myX, myY)
+            # print(myX, myY)
             continue
 
         if first:
@@ -515,7 +522,7 @@ def assign_checkers(dat, checkers):
             checkersGroup[nextNonempty].append(mySquare)
             nextNonempty += 1
             if nextNonempty >= len(checkersGroup):
-                print("oopsie")
+                # print("oopsie")
                 nextNonempty -= 1
     return checkersGroup
 
@@ -537,6 +544,8 @@ def minimum_bounding_rectangle(checkersGroups):
 
 
 def least_squares(pts, dof=2):
+    # Normal Ax = b solve. Dof refers to the degree of the polynomial
+    # being solved. The default is 2, to return a line of the form mx+c
     rows = len(pts)
     A = np.ones((rows, dof))
     b = np.zeros(rows)
@@ -547,31 +556,62 @@ def least_squares(pts, dof=2):
         else:
             for j in range(dof-1):
                 A[i, j] = pts[i][1]
-    print(A)
-    print(b)
+    # print(A)
+    # print(b)
     return np.linalg.lstsq(A, b, rcond=None)
 
 
 
-def stack_values(dat, colors, rectList):
-    # find the color values
+def stack_values(dat, colors, rectList, cut_frame, debug=False):
     totVal = 0
+    # Want to match the values of the colors to the right stack
+    if debug:
+        cv2.namedWindow("debug")
+
+    listOfColors = [dat.colorAssociation[key] for key in dat.colorAssociation]
+
     for i in range(len(dat.values)):
-        height = rectList[i][3] - rectList[i][2]
-        value = dat.values[i] * np.round(height / dat.chipHeight)
+        # First, check the stack value
+        # height = rectList[i][3] - rectList[i][2]
+        x1 = rectList[i][0]
+        x2 = rectList[i][1]
+        y1 = rectList[i][2]
+        y2 = rectList[i][3]
+        height = y2 - y1
+        print(cut_frame.shape)
+        section = cut_frame[y1:y2, x1:x2]
+        print("Stack values:", x1, x2, y1, y2)
+        if debug:
+            while True:
+                cv2.imshow("debug", section)
+                k = cv2.waitKey(1) & 0xFF
+                if k == 13:
+                    break
+
+        secColor = get_color_dominant(section)
+
+        # Find the closest remaining color
+        minError = 10000000
+        minIndex = -1
+        ind = 0
+        print("Color Comp: ", secColor)
+        for color in listOfColors:
+            tempError = np.linalg.norm(secColor - color)
+            
+            print("Color Real: ", color)
+            if tempError < minError and tempError <= dat.delta:
+                minIndex = ind
+                minError = tempError
+            ind += 1
+
+        print("Closest Color: ", dat.colorAssociation[minIndex])
+        print("Stack Height:", height)
+        print("Estimated Height:", np.round(height / dat.chipHeight))
+        print("Value: ", dat.values[minIndex])
+        value = dat.values[minIndex] * np.round(height / dat.chipHeight)
         totVal += value
     return totVal
 
-
-
-def edge_detection(frame):
-    frame = cv2.GaussianBlur(frame, (3, 3), 0)
-    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3, borderType=cv2.BORDER_DEFAULT)
-
-    abs_grad_y = cv2.convertScaleAbs(grad_y)
-    grad = abs_grad_y # cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
-    return grad
 
 
 def bounding_box(masked):
@@ -582,18 +622,6 @@ def bounding_box(masked):
     gmasked = cv2.rectangle(masked,(x,y),(x+w,y+h),(255,0,0),2)
     return gmasked, (w, h)
 
-
-def test_stereo():
-    # from opencv docs
-    # cv2.namedWindow("depth")
-    imgL = cv2.imread('test_l.jpg',0)
-    imgR = cv2.imread('test_r.jpg',0)
-    stereo = cv2.StereoBM_create(numDisparities=16, blockSize=5)
-    stereo.setSpeckleRange(16)
-    disparity = stereo.compute(imgL,imgR)
-    print(disparity.shape)
-    plt.imshow((disparity + np.abs(np.min(disparity))) / np.max(disparity))
-    plt.show()
 
 
 def main():
@@ -606,6 +634,7 @@ def main():
     # # test_stereo()
     dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
     test_white("setup.png", dat)
+
 
 
 if __name__ == '__main__':
