@@ -41,7 +41,11 @@ class CVData():
         print("Lower bound:", self.lb)
         print("Upper bound:", self.ub)
 
-
+def load_config(fiName):
+		fi = open(fiName, "rb")
+		dat = pickle.load(fi)
+		fi.close()
+		return dat
 
 def color_calib(event, x, y, flags, params):
     cal_frame = params[0]
@@ -367,7 +371,7 @@ def calibration_routine(dat, im=None, debug=False):
 
     grey_mask = bin_thresh(cut_frame, binThresh, dat)
     checkersGroups = get_contours(grey_mask, dat)
-
+    print(checkersGroups)
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255), (255, 0, 255)]
     rectList = minimum_bounding_rectangle(checkersGroups)
     cut_frame, rectBottoms = get_cnt_rects(checkersGroups, cut_frame, colors, rectList, draw=False)
@@ -553,13 +557,15 @@ def test_white(file, dat, calib=False):
 
 
 def assign_checkers(dat, checkers, setH=False):
-    wiggleRoom = 3/4
+    wiggleRoom = .1
     searchX = wiggleRoom * dat.chipWidth
-    bError = 0.3
+    bError = 1
     lbChip = (1 - bError) * dat.chipHeight
     ubChip = (1 + bError) * dat.chipHeight 
+    print("lbChip = "+str(lbChip))
+    print("ubChip = "+str(ubChip))
     minH = 20000
-    areaBound = (dat.chipHeight * dat.chipWidth) / 15
+    areaBound = (dat.chipHeight * dat.chipWidth) / 25
     # print(searchY)
     checkersGroup = [[] for d in dat.values]
     # groupList = []
@@ -576,6 +582,7 @@ def assign_checkers(dat, checkers, setH=False):
         myH = mySquare[4]
 
         found = False
+        print(myH)
         checkArea = (mySquare[3]) * (mySquare[4])
         if checkArea <= areaBound:
             # print(myX, myY)
@@ -735,7 +742,7 @@ def bounding_box(masked):
 
 
 
-def main():
+'''def main():
     # dat = CVData(2, 4, 9, [50, 500, 5])
     # # dat.print_info()
     # dat = CVData(1, 1, 10, 90, [1, 2, 5, 10])
@@ -751,6 +758,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()'''
 
 

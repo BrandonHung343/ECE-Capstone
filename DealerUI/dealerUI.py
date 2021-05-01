@@ -9,6 +9,7 @@ import CompVision
 import config
 from config import *
 import serial
+import pickle
 
 
 # Pygame Framework
@@ -174,8 +175,10 @@ class PokerGame(PygameGame):
         self.tempBlackNum = ""
         self.tempBBNum = ""
 
-        #self.cvdat = CompVision.CVData(0, 2, 13.5, 120, config.chipValues)
-        self.cvdat = CompVision.CVData(0, [1, 2, 5, 10])
+        self.cvdat = CompVision.CVData(1, config.chipValues[0:3]) 
+        if self.cvdat.saveFile in os.listdir("../CompVision/"):
+            self.cvdat = CompVision.load_config("../CompVision/"+self.cvdat.saveFile)
+            self.cvdat.cam = 1
 
         # Stack Sizes 
         self.tempStack1 = ""
@@ -667,7 +670,8 @@ class PokerGame(PygameGame):
                 currP = config.currPlayers[0]
 
                 # Update Bets
-                bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
+                #bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
+                bet = CompVision.count_stack(self.cvdat, debug=True)
                 config.maxBet = bet
                 self.updateBetList(currP, bet)
 
@@ -1006,8 +1010,7 @@ class PokerGame(PygameGame):
 
         elif self.calibrateRect.collidepoint(x, y):
             # Call calibrate function
-            self.cvdat = CompVision.CVData(0, 2, 13.5, 120, config.chipValues)
-            self.cvdat = CompVision.calibrate(self.cvdat)
+            self.cvdat = CompVision.calibration_routine(self.cvdat)
 
         elif self.whiteRect.collidepoint(x, y):
             self.tempWhiteNum = ""
@@ -1579,9 +1582,6 @@ class PokerGame(PygameGame):
         string_encode = string.encode()
         self.ser.write(string_encode)
 
-        '''
-        elif ord(pygame.key.name(code)) == 115:
-            CompVision.get_stack_value(self.cvdat, debug=True)'''
 
 
 
