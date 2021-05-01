@@ -4,6 +4,7 @@ import time
 import colorsys
 import matplotlib.pyplot as plt
 import copy
+import pickle
 
 class CVData():
     def __init__(self, cam, numDomColors, chipHeight, chipWidth, values):
@@ -22,7 +23,7 @@ class CVData():
         self.domColors = numDomColors
         self.chipWidth = chipWidth
         self.chipHeight = chipHeight
-        self.delta = 30
+        self.delta = 50
         self.values = values
         self.prog = 0
         self.cap = cv2.VideoCapture(cam)
@@ -32,6 +33,9 @@ class CVData():
         self.tempColor = None
         self.tempH = None
         self.tempW = None
+        self.saveFile = "calib.p"
+        self.chipFile = "chips.p"
+        self.heightList = {}
 
     def print_info(self):
         print("Lower bound:", self.lb)
@@ -185,6 +189,9 @@ def calibrate(dat, test=False, testIm=None):
     else:
         cal_frame = testIm
 
+    if not test:
+        cap.release()
+
     org = (13, 25)
     txtColor = (255, 255, 255)
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -226,7 +233,14 @@ def calibrate(dat, test=False, testIm=None):
             break
 
     cv2.destroyAllWindows()
+    
     return dat
+
+
+
+def save_file(dat):
+    with open(dat.saveFile, "wb") as fi:
+        pickle.dump(dat, fi)
 
 
 
@@ -242,115 +256,7 @@ def color_mask(dat, frame, chip):
 
 
 
-def get_stack_value(dat, debug=False):
-    cam = dat.cam
-    cap = dat.cap
-    cap.open(cam)
-    ret, frame = cap.read()
-    cal_frame = cv2.bilateralFilter(frame, dat.kSize, 75, 75)
-
-    sizes = cal_frame.shape
-    r1 = int(np.rint(sizes[0] * 1/4))
-    r2 = int(np.rint(sizes[0] * 3/4))
-    cut_frame = cal_frame[r1:r2, :, :]
-
-    for i in range(len(dat.values)):
-        masked = color_mask(dat, cut_frame, i)
-        masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
-        masked = clean_morphological(dat, masked)
-        
-        masked, bigBox = bounding_box(masked)
-        
-        if debug:
-            print(bigBox)
-            cv2.namedWindow("debug_stack")
-            cv2.imshow("debug_stack", masked)
-            key = cv2.waitKey(0)
-
-        if np.abs(bigBox[0] - dat.chipWidth) <= dat.delta:
-            print(bigBox[1] / dat.chipHeight)
-            print(np.round(bigBox[1] / dat.chipHeight) * dat.values[i])
-        else:
-            print("no detection")
-
-    cv2.destroyAllWindows()
-    return
-
-
-
-def test_image(file, dat):
-    cv2.namedWindow("calibrate")
-    cal_frame = cv2.imread(file)
-    # origFrame = np.copy(cal_frame)
-    # eat out the white
-    binThresh = 220
-    grey_mask = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2GRAY)
-    grey_mask[grey_mask > binThresh] = 0
-    grey_mask[grey_mask > 0] = 1
-    cv2.imshow("calibrate", grey_mask)
-    cv2.waitKey(0)
-    cal_frame = cv2.bitwise_and(cal_frame, cal_frame, mask=grey_mask)
-    cv2.imshow("calibrate", cal_frame)
-    cv2.waitKey(0)
-
-    cal_frame = cv2.morphologyEx(cal_frame, cv2.MORPH_CLOSE, (dat.cK, dat.cK))
-    cal_frame = cv2.bilateralFilter(cal_frame, dat.kSize, 75, 75)
-    
-    # cal_frame = cv2.cvtColor(cal_frame, cv2.COLOR_RGB2HSV)
-    # cal_frame = cv2.GaussianBlur(cal_frame, (dat.kSize, dat.kSize), dat.sigX)
-    # origFrame = cv2.cvtColor(cal_frame, cv2.COLOR_BGR2HSV)
-    org = (13, 25)
-    color = (255, 255, 255)
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    debug = True
-    cv2.setMouseCallback("calibrate", average_over_frame, [cal_frame, dat]);
-
-    for i in range(len(dat.values)):
-        dat.prog = i
-        txt = 'Chip Value: ' + str(int(dat.values[dat.prog]))
-        tmp = np.copy(cal_frame)
-        cv2.putText(tmp, txt, org, font, 1, color, 2)
-        # cal_frame = white_balance(cal_frame)
-        while True:
-            cv2.imshow("calibrate", tmp)
-            k = cv2.waitKey(1) & 0xFF
-            if k == 13:
-                break
-
-    for i in range(len(dat.values)):
-        sizes = cal_frame.shape
-        r1 = int(np.rint(sizes[0] * 1/3))
-        r2 = int(np.rint(sizes[0] * 2/3))
-        
-
-
-        print(r1)
-        cut_frame = cal_frame[r1:r2, :, :]
-        masked = color_mask(dat, cut_frame, i)
-        masked = cv2.cvtColor(masked, cv2.COLOR_HSV2BGR)
-        masked = clean_morphological(dat, masked)
-        
-        masked, bigBox = bounding_box(masked)
-        
-        if debug:
-            cv2.namedWindow("debug_stack")
-            cv2.imshow("debug_stack", masked)
-            key = cv2.waitKey(0)
-
-        if np.abs(bigBox[0] - dat.chipWidth) <= dat.delta:
-            print(bigBox[1] / dat.chipHeight)
-            print(np.round(bigBox[1] / dat.chipHeight) * dat.values[i])
-        else:
-            print("no detection")
-
-        print(bigBox)
-
-    cv2.destroyAllWindows()
-    return
-
-
-
-def get_contours(frame, dat):
+def get_contours(frame, dat, setH=False):
     contours, hierarchy = cv2.findContours(frame, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE)
 
     # cv2.setMouseCallback("calibrate", coord_get, [cut_frame, dat]);
@@ -364,7 +270,7 @@ def get_contours(frame, dat):
         idNum += 1
 
 
-    return assign_checkers(dat, cntRects)
+    return assign_checkers(dat, cntRects, setH)
 
 
 
@@ -414,11 +320,16 @@ def bin_thresh(frame, binThresh, dat):
 
 
 
-def test_white(file, dat):
+def test_white(file, dat, calib=False):
     cv2.namedWindow("calibrate")
     cal_frame = cv2.imread(file)
 
-    dat = calibrate(dat, test=True, testIm=cal_frame)
+    if calibrate:
+        dat = calibrate(dat, test=True, testIm=cal_frame)
+    else:
+        fi = open(dat.saveFile, "rb")
+        dat = pickle.load(fi)
+        fi.close()
 
     binThresh = 245
     sizes = cal_frame.shape
@@ -464,7 +375,7 @@ def test_white(file, dat):
     # print("m: ", m)
 
     rot_grey = bin_thresh(rotated, binThresh, dat)
-    checkersGroups = get_contours(rot_grey, dat)
+    checkersGroups = get_contours(rot_grey, dat, True)
     rectList = minimum_bounding_rectangle(checkersGroups)
     rotated, rectBottoms = get_cnt_rects(checkersGroups, rotated, colors, rectList, draw=True)
     cv2.imshow("calibrate", rotated)
@@ -477,9 +388,13 @@ def test_white(file, dat):
 
 
 
-def assign_checkers(dat, checkers):
+def assign_checkers(dat, checkers, setH=False):
     wiggleRoom = 3/4
     searchX = wiggleRoom * dat.chipWidth
+    bError = 0.3
+    lbChip = (1 - bError) * dat.chipHeight
+    ubChip = (1 + bError) * dat.chipHeight
+    minH = 20000
     areaBound = (dat.chipHeight * dat.chipWidth) / 15
     # print(searchY)
     checkersGroup = [[] for d in dat.values]
@@ -488,19 +403,28 @@ def assign_checkers(dat, checkers):
     first = True
     # print(areaBound)
     updated_checkers = copy.deepcopy(checkers)
+    chipSum = 0
+    numChips = 0
     while len(updated_checkers) > 0:
         mySquare = updated_checkers.pop(0)
         myX = mySquare[5][0]
         myY = mySquare[5][1]
+        myH = mySquare[4]
+
         found = False
         checkArea = (mySquare[3]) * (mySquare[4])
         if checkArea <= areaBound:
             # print(myX, myY)
             continue
 
+        if myH <= ubChip and myH >= lbChip:
+            chipSum += myH
+            numChips += 1
+
         if first:
             removed_inds = [0]
             checkersGroup[0].append(updated_checkers.pop(0))
+            # print(myY)
             first = False
             continue
 
@@ -524,6 +448,12 @@ def assign_checkers(dat, checkers):
             if nextNonempty >= len(checkersGroup):
                 # print("oopsie")
                 nextNonempty -= 1
+    # print("Expected Chip Height: ", chipSum)
+    # print("Expected Num Chips: ", numChips)
+    # print("Smallest H: ", minH)
+    if setH:
+        dat.chipHeight = chipSum / numChips
+
     return checkersGroup
 
 
@@ -581,12 +511,7 @@ def stack_values(dat, colors, rectList, cut_frame, debug=False):
         print(cut_frame.shape)
         section = cut_frame[y1:y2, x1:x2]
         print("Stack values:", x1, x2, y1, y2)
-        if debug:
-            while True:
-                cv2.imshow("debug", section)
-                k = cv2.waitKey(1) & 0xFF
-                if k == 13:
-                    break
+       
 
         secColor = get_color_dominant(section)
 
@@ -603,13 +528,25 @@ def stack_values(dat, colors, rectList, cut_frame, debug=False):
                 minIndex = ind
                 minError = tempError
             ind += 1
+        
+        chipVal = dat.values[minIndex]
+        chipH = dat.chipHeight        
+        value = chipVal * np.round(height / chipH)
 
-        print("Closest Color: ", dat.colorAssociation[minIndex])
-        print("Stack Height:", height)
-        print("Estimated Height:", np.round(height / dat.chipHeight))
-        print("Value: ", dat.values[minIndex])
-        value = dat.values[minIndex] * np.round(height / dat.chipHeight)
+        if debug:
+            print("Closest Color: ", dat.colorAssociation[minIndex])
+            print("Stack Height: ", height)
+            print("Value: ", dat.values[minIndex])
+            print("Estimated Height: ", np.round(height / chipH))
+            print("Total Value: ", value)
+            while True:
+                cv2.imshow("debug", section)
+                k = cv2.waitKey(1) & 0xFF
+                if k == 13:
+                    break
+        
         totVal += value
+
     return totVal
 
 
@@ -633,7 +570,7 @@ def main():
     # dat.print_info()
     # # test_stereo()
     dat = CVData(0, 1, 10, 90, [1, 2, 5, 10])
-    test_white("setup.png", dat)
+    test_white("1.jpg", dat, calib=False)
 
 
 
