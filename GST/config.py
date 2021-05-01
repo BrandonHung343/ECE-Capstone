@@ -9,7 +9,9 @@ class Player(object):
         self.stackSize = 200
         self.betList = []
 
-playerList = [Player(0, 60), Player(1, 90), Player(2, 120), Player(3, 140), Player(4, 220), Player(5, 240), Player(6, 270), Player(7, 300)]
+playerList = [Player(0, 60), Player(1, 80), Player(2, 100), Player(3, 120), Player(4, 140), Player(5, 160), Player(6, 180), Player(7, 200)]
+#playerList = [Player(0, 60), Player(1, 90), Player(2, 120), Player(3, 140), Player(4, 220), Player(5, 240), Player(6, 270), Player(7, 300)]
+#playerList = [Player(0, 0), Player(1, 25), Player(2, 50), Player(3, 75), Player(4, 100), Player(5, 125), Player(6, 150), Player(7, 175)]
 currPlayers = []
 endPlayer = 0
 smallBlind = 0

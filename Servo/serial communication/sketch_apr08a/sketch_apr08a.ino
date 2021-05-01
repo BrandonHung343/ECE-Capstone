@@ -17,11 +17,8 @@ void loop(){
   int angle; 
   if(Serial.available()){         //From RPi to Arduino
     String data = Serial.readStringUntil('\n');  //conveting the value of chars to integer
-    angle = data.substring(6,8).toInt();
-    servo.rotate(angle*3, 4);
+    angle = data.toInt();
+    servo.rotate(angle, 4);
     Serial.println(angle);
   }
-
-  
-  
 }

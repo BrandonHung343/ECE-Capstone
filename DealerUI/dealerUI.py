@@ -98,7 +98,7 @@ class PokerGame(PygameGame):
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
-        #self.ser = serial.Serial('/dev/cu.usbmodem14101', 9600)
+        self.ser = serial.Serial('/dev/cu.usbmodem14201', 9600)
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
@@ -174,7 +174,8 @@ class PokerGame(PygameGame):
         self.tempBlackNum = ""
         self.tempBBNum = ""
 
-        self.cvdat = CompVision.CVData(0, 2, 13.5, 120, config.chipValues)
+        #self.cvdat = CompVision.CVData(0, 2, 13.5, 120, config.chipValues)
+        self.cvdat = CompVision.CVData(0, [1, 2, 5, 10])
 
         # Stack Sizes 
         self.tempStack1 = ""
@@ -1570,11 +1571,13 @@ class PokerGame(PygameGame):
 
     def rotateServo(self): 
         num = config.currPlayers[0]
+        print(num)
         degrees = config.playerList[num].degrees
         print(degrees)
-        '''string = str(degrees)
+        string = str(degrees)+"\n"
+        print(string)
         string_encode = string.encode()
-        self.ser.write(string_encode)'''
+        self.ser.write(string_encode)
 
         '''
         elif ord(pygame.key.name(code)) == 115:
