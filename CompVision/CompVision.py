@@ -42,10 +42,10 @@ class CVData():
         print("Upper bound:", self.ub)
 
 def load_config(fiName):
-		fi = open(fiName, "rb")
-		dat = pickle.load(fi)
-		fi.close()
-		return dat
+    fi = open(fiName, "rb")
+    dat = pickle.load(fi)
+    fi.close()
+    return dat
 
 def color_calib(event, x, y, flags, params):
     cal_frame = params[0]
@@ -138,6 +138,7 @@ def average_over_frame(event, x, y, flags, params):
                 # print(x1, x2, y1, y2)
                 dat.tempH = x2 - x1
                 dat.tempW = y2 - y1
+                print(x2,x1,y2,y1)
                 dat.tempColor = get_color_dominant(section)
                 # dat.colorAssociation[dat.prog] = domColor[0]
             dat.recList = []
@@ -241,6 +242,7 @@ def calibrate(dat, cal_frame):
         dat.chipWidth += dat.tempW
         dat.intensities[i] = intensity(dat.tempColor)
         dat.colorAssociation[i] = bgr2hsv(dat.tempColor)
+        print(dat.tempColor)
 
     dat.chipHeight = np.round(dat.chipHeight / len(dat.values))
     dat.chipWidth = np.round(dat.chipWidth / len(dat.values))
@@ -482,7 +484,7 @@ def count_stack(dat=None, im=None, debug=False):
 
     if debug:
         print(totVal)
-
+    cv2.destroyAllWindows()
     return totVal
 
 
@@ -557,15 +559,15 @@ def test_white(file, dat, calib=False):
 
 
 def assign_checkers(dat, checkers, setH=False):
-    wiggleRoom = .1
+    wiggleRoom = 0.45
     searchX = wiggleRoom * dat.chipWidth
-    bError = 1
+    bError = .35
     lbChip = (1 - bError) * dat.chipHeight
     ubChip = (1 + bError) * dat.chipHeight 
     print("lbChip = "+str(lbChip))
     print("ubChip = "+str(ubChip))
     minH = 20000
-    areaBound = (dat.chipHeight * dat.chipWidth) / 25
+    areaBound = (dat.chipHeight * dat.chipWidth) / 36
     # print(searchY)
     checkersGroup = [[] for d in dat.values]
     # groupList = []
@@ -582,11 +584,13 @@ def assign_checkers(dat, checkers, setH=False):
         myH = mySquare[4]
 
         found = False
-        print(myH)
+        #print(myH)
         checkArea = (mySquare[3]) * (mySquare[4])
+        
         if checkArea <= areaBound:
-            # print(myX, myY)
+            print(myX, myY)
             continue
+        
 
         if myH <= ubChip and myH >= lbChip:
             chipSum += myH
@@ -619,12 +623,12 @@ def assign_checkers(dat, checkers, setH=False):
             if nextNonempty >= len(checkersGroup):
                 # print("oopsie")
                 nextNonempty -= 1
-    # print("Expected Chip Height: ", chipSum)
+    #print("Expected Chip Height: ", chipSum)
     # print("Expected Num Chips: ", numChips)
     # print("Smallest H: ", minH)
     if setH:
         dat.chipHeight = chipSum / numChips
-
+    print(checkersGroup)
     return checkersGroup
 
 
@@ -633,6 +637,8 @@ def minimum_bounding_rectangle(checkersGroups):
     rectList = []
     i = 0
     for group in checkersGroups:
+        if group == []: 
+            continue 
         xMin = min(group, key=lambda x: x[1])
         yMin = min(group, key=lambda x: x[2])
         xMax = max(group, key=lambda x: x[1] + x[3])
@@ -685,8 +691,8 @@ def stack_values(dat, rectList, cut_frame, debug=False):
 
 
         secColor = get_color_dominant(section)
-        var = np.linalg.norm(secColor - np.mean(secColor))
         inten = intensity(secColor)
+        var = inten <= 130
         secColor = bgr2hsv(secColor)
 
         # Find the closest remaining color
@@ -700,13 +706,14 @@ def stack_values(dat, rectList, cut_frame, debug=False):
             intColor = listOfIntensities[ind]
             tempError = np.linalg.norm(secColor - color)
 
-            if var <= similarRange:
+            if var:
                 tempError = np.abs(inten - intColor)
 
             if tempError < minError:
                 minIndex = ind
                 minError = tempError
             ind += 1
+        
         
         chipVal = dat.values[minIndex]
         chipH = dat.chipHeight        

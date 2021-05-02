@@ -99,7 +99,7 @@ class PokerGame(PygameGame):
         folder = os.path.dirname(os.path.realpath(__file__))
 
         # Servo
-        self.ser = serial.Serial('/dev/cu.usbmodem14201', 9600)
+        self.ser = serial.Serial('/dev/cu.usbmodem144301', 9600)
 
         # Config Screen 
         self.startButton = pygame.Rect(self.width//2-self.width//5, self.height//2-self.width//5, self.width//5, self.width//5)
@@ -174,12 +174,12 @@ class PokerGame(PygameGame):
         self.tempBlueNum = ""
         self.tempBlackNum = ""
         self.tempBBNum = ""
-
-        self.cvdat = CompVision.CVData(1, config.chipValues[0:3]) 
+        
+        self.cvdat = CompVision.CVData(1, config.chipValues[0:4]) 
         if self.cvdat.saveFile in os.listdir("../CompVision/"):
             self.cvdat = CompVision.load_config("../CompVision/"+self.cvdat.saveFile)
             self.cvdat.cam = 1
-
+        
         # Stack Sizes 
         self.tempStack1 = ""
         self.tempStack2 = ""
@@ -1009,8 +1009,16 @@ class PokerGame(PygameGame):
             config.gameMode = "config"
 
         elif self.calibrateRect.collidepoint(x, y):
-            # Call calibrate function
+            # Rotate to middle
+            string = str(130)+"\n"
+            string_encode = string.encode()
+            self.ser.write(string_encode)
+
+            # Calibrate
+            self.cvdat.recList = []
+            self.cvdat.searchArea = False 
             self.cvdat = CompVision.calibration_routine(self.cvdat)
+            self.cvdat.searchArea = False 
 
         elif self.whiteRect.collidepoint(x, y):
             self.tempWhiteNum = ""
