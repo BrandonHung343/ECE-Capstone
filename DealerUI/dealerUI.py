@@ -671,7 +671,7 @@ class PokerGame(PygameGame):
 
                 # Update Bets
                 #bet = 2 if (config.maxBet == 0) else 2*config.maxBet # Will change with CV
-                bet = CompVision.count_stack(self.cvdat, debug=True)
+                bet = CompVision.count_stack(self.cvdat, debug=False)
                 config.maxBet = bet
                 self.updateBetList(currP, bet)
 
